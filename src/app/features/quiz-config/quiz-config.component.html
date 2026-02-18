@@ -32,11 +32,16 @@
         <div class="flex items-center">
           <input
             class="w-16 text-center text-sm font-medium bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-border-dark rounded-lg py-1 px-2 focus:ring-2 focus:ring-primary/50 focus:border-primary text-slate-900 dark:text-white"
-            min="1"
+            [min]="hasSelection ? 1 : 0"
             [max]="maxQuestionCount"
             type="number"
+            inputmode="numeric"
+            pattern="[0-9]*"
             [ngModel]="questionCount"
             (ngModelChange)="onQuestionCountChange($event)"
+            (input)="onQuestionCountInput($event)"
+            (keydown)="blockInvalidNumberInput($event)"
+            (blur)="onQuestionCountBlur()"
             [disabled]="!hasSelection"
           />
         </div>
@@ -45,7 +50,7 @@
       <div class="relative pt-2 pb-2">
         <input
           class="w-full h-2 bg-slate-200 dark:bg-border-dark rounded-lg appearance-none cursor-pointer accent-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
-          min="1"
+          [min]="hasSelection ? 1 : 0"
           [max]="maxQuestionCount"
           step="1"
           type="range"
@@ -54,7 +59,7 @@
           [disabled]="!hasSelection"
         />
         <div class="flex justify-between text-xs text-slate-400 dark:text-muted-foreground mt-2 font-medium">
-          <span>1</span>
+          <span>{{ hasSelection ? 1 : 0 }}</span>
           <span>{{ middleQuestionCount }}</span>
           <span>{{ maxQuestionCount }}</span>
         </div>
@@ -96,7 +101,7 @@
     <h3 class="text-sm font-semibold text-slate-900 dark:text-white px-1">Select Topic</h3>
     <div class="grid grid-cols-1 gap-3">
       @for (topic of topics; track topic.id) {
-        <button type="button" [class]="topicButtonClasses(topic.id)" (click)="toggleTopic(topic.id)">
+        <button type="button" [class]="topicButtonClasses(topic.id)" (click)="toggleTopic(topic.id, $event)">
           <div>
             <span [class]="topicNameClasses(topic.id)">{{ topic.name }}</span>
             <span class="block text-xs text-slate-500 dark:text-muted-foreground mt-0.5">{{ topic.description }}</span>

@@ -164,34 +164,42 @@ export class QuizService {
       return;
     }
 
+    const validTopicIds = new Set(this.topicsData.map((topic) => topic.id));
+    const selectedTopicIds = [...new Set(config.selectedTopicIds)].filter((topicId) => validTopicIds.has(topicId));
+    const questionPool = this.getQuestionPoolByTopics(selectedTopicIds);
+
+    if (!questionPool.length) {
+      this._config.set({
+        questionCount: 0,
+        shuffleQuestions: config.shuffleQuestions,
+        shuffleAnswers: config.shuffleAnswers,
+        selectedTopicIds,
+      });
+      this._questions.set([]);
+      this._currentIndex.set(0);
+      return;
+    }
+
+    const questionCount = Math.min(Math.max(1, Math.floor(config.questionCount)), questionPool.length);
+
     const sanitizedConfig: QuizConfig = {
-      questionCount: Math.max(1, config.questionCount),
+      questionCount,
       shuffleQuestions: config.shuffleQuestions,
       shuffleAnswers: config.shuffleAnswers,
-      selectedTopicIds: [...new Set(config.selectedTopicIds)],
+      selectedTopicIds,
     };
 
-    const selectedQuestions = this.allQuestions
-      .filter((question) => sanitizedConfig.selectedTopicIds.includes(question.topicId))
-      .map((question) => ({
-        ...question,
-        options: question.options.map((option) => ({ ...option })),
-        userSelectedOptionId: null,
-      }));
+    const questionsForSession = sanitizedConfig.shuffleQuestions
+      ? this.shuffleArray(questionPool).slice(0, sanitizedConfig.questionCount)
+      : questionPool.slice(0, sanitizedConfig.questionCount);
 
-    const maybeShuffledQuestions = sanitizedConfig.shuffleQuestions
-      ? this.shuffleArray(selectedQuestions)
-      : [...selectedQuestions];
-
-    const withRandomizedOptions = maybeShuffledQuestions.map((question) => ({
+    const withRandomizedOptions = questionsForSession.map((question) => ({
       ...question,
       options: sanitizedConfig.shuffleAnswers ? this.randomizeOptions(question.options) : [...question.options],
     }));
 
-    const activeQuestions = withRandomizedOptions.slice(0, sanitizedConfig.questionCount);
-
     this._config.set(sanitizedConfig);
-    this._questions.set(activeQuestions);
+    this._questions.set(withRandomizedOptions);
     this._currentIndex.set(0);
   }
 
@@ -262,6 +270,17 @@ export class QuizService {
 
   private topicNameById(topicId: string): string {
     return this.topics.find((topic) => topic.id === topicId)?.name ?? topicId;
+  }
+
+  private getQuestionPoolByTopics(topicIds: readonly string[]): Question[] {
+    const topicIdSet = new Set(topicIds);
+    return this.allQuestions
+      .filter((question) => topicIdSet.has(question.topicId))
+      .map((question) => ({
+        ...question,
+        options: question.options.map((option) => ({ ...option })),
+        userSelectedOptionId: null,
+      }));
   }
 
   private buildQuestionCountByTopicId(questions: readonly Question[]): Map<string, number> {
