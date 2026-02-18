@@ -66,21 +66,21 @@ export class QuizRunnerComponent {
     if (isSelected) {
       return 'group relative flex w-full items-center p-5 text-left transition-all duration-200 border-2 border-primary bg-primary/5 rounded-2xl active:scale-[0.98]';
     }
-    return 'group relative flex w-full items-center p-5 text-left transition-all duration-200 border border-border-dark rounded-2xl bg-card-dark hover:border-primary/50 hover:bg-card-dark/80 active:scale-[0.98]';
+    return 'group relative flex w-full items-center p-5 text-left transition-all duration-200 border border-slate-200 dark:border-border-dark rounded-2xl bg-white dark:bg-card-dark hover:border-primary/50 hover:bg-slate-50 dark:hover:bg-card-dark/80 active:scale-[0.98]';
   }
 
   optionBadgeClasses(question: Question, option: Option): string {
     const isSelected = question.userSelectedOptionId === option.id;
     if (isSelected) {
-      return 'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-bold text-white transition-colors shadow-sm';
+      return 'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-xs font-semibold text-white transition-colors shadow-sm';
     }
-    return 'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-background-dark text-sm font-bold text-muted-foreground group-hover:text-primary transition-colors border border-border-dark/50';
+    return 'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 dark:bg-background-dark text-xs font-semibold text-slate-600 dark:text-muted-foreground group-hover:text-primary transition-colors border border-slate-200 dark:border-border-dark/50';
   }
 
   optionTextClasses(question: Question, option: Option): string {
     const isSelected = question.userSelectedOptionId === option.id;
     return isSelected
-      ? 'ml-5 text-lg font-semibold text-white'
-      : 'ml-5 text-lg font-medium text-white/90 group-hover:text-white';
+      ? 'ml-5 text-[1.15rem] font-semibold text-slate-900 dark:text-white'
+      : 'ml-5 text-[1.15rem] font-medium text-slate-800 dark:text-white/90 group-hover:text-slate-900 dark:group-hover:text-white';
   }
 }

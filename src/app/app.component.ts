@@ -1,6 +1,6 @@
-import { DOCUMENT } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { ThemeService } from './core/services/theme.service';
 
 @Component({
   selector: 'app-root',
@@ -11,10 +11,9 @@ import { RouterOutlet } from '@angular/router';
   styles: [],
 })
 export class AppComponent {
-  private readonly document = inject(DOCUMENT);
+  private readonly themeService = inject(ThemeService);
 
   constructor() {
-    this.document.documentElement.classList.add('dark');
-    this.document.body.classList.add('dark');
+    this.themeService.initializeTheme();
   }
 }

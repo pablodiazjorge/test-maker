@@ -1,5 +1,7 @@
+import { HttpClient } from '@angular/common/http';
 import { computed, Injectable, signal } from '@angular/core';
-import { DEFAULT_QUIZ_CONFIG, Option, Question, QUESTIONS, QuizConfig, TOPICS, Topic } from '../data/quiz.data';
+import { firstValueFrom } from 'rxjs';
+import { DEFAULT_QUIZ_CONFIG, MasterTopic, Option, Question, QuizConfig, Topic } from '../data/quiz.data';
 
 export interface QuizResults {
   total: number;
@@ -20,18 +22,31 @@ export interface QuizResults {
 
 @Injectable({ providedIn: 'root' })
 export class QuizService {
-  readonly topics: readonly Topic[] = TOPICS;
-
-  private readonly allQuestions: readonly Question[] = QUESTIONS;
+  private topicsData: Topic[] = [];
+  private allQuestions: Question[] = [];
+  private questionCountByTopicId = new Map<string, number>();
+  private loadMasterDataPromise: Promise<void> | null = null;
 
   private readonly _config = signal<QuizConfig>({ ...DEFAULT_QUIZ_CONFIG });
   private readonly _questions = signal<Question[]>([]);
   private readonly _currentIndex = signal(0);
+  private readonly _isDataLoaded = signal(false);
+  private readonly _isDataLoading = signal(false);
+  private readonly _dataLoadError = signal<string | null>(null);
+
+  constructor(private readonly http: HttpClient) {}
+
+  get topics(): readonly Topic[] {
+    return this.topicsData;
+  }
 
   readonly config = computed(() => this._config());
   readonly questions = computed(() => this._questions());
   readonly currentIndex = computed(() => this._currentIndex());
   readonly totalQuestions = computed(() => this._questions().length);
+  readonly isDataLoaded = computed(() => this._isDataLoaded());
+  readonly isDataLoading = computed(() => this._isDataLoading());
+  readonly dataLoadError = computed(() => this._dataLoadError());
 
   readonly currentQuestion = computed(() => {
     const questions = this._questions();
@@ -103,7 +118,52 @@ export class QuizService {
     };
   });
 
+  loadMasterData(): Promise<void> {
+    if (this._isDataLoaded()) {
+      return Promise.resolve();
+    }
+
+    if (this.loadMasterDataPromise) {
+      return this.loadMasterDataPromise;
+    }
+
+    this._isDataLoading.set(true);
+    this._dataLoadError.set(null);
+
+    this.loadMasterDataPromise = firstValueFrom(this.http.get<MasterTopic[]>('assets/master-data.json'))
+      .then((masterTopics) => {
+        const { topics, questions } = this.normalizeMasterData(masterTopics);
+        this.topicsData = topics;
+        this.allQuestions = questions;
+        this.questionCountByTopicId = this.buildQuestionCountByTopicId(questions);
+        this._isDataLoaded.set(questions.length > 0);
+        if (!questions.length) {
+          this._dataLoadError.set('Master data is empty or invalid.');
+        }
+      })
+      .catch((error) => {
+        this.topicsData = [];
+        this.allQuestions = [];
+        this.questionCountByTopicId = new Map<string, number>();
+        this._isDataLoaded.set(false);
+        this._dataLoadError.set('Unable to load quiz data.');
+        throw error;
+      })
+      .finally(() => {
+        this._isDataLoading.set(false);
+        this.loadMasterDataPromise = null;
+      });
+
+    return this.loadMasterDataPromise;
+  }
+
   startQuiz(config: QuizConfig): void {
+    if (!this._isDataLoaded() || !this.allQuestions.length) {
+      this._questions.set([]);
+      this._currentIndex.set(0);
+      return;
+    }
+
     const sanitizedConfig: QuizConfig = {
       questionCount: Math.max(1, config.questionCount),
       shuffleQuestions: config.shuffleQuestions,
@@ -183,6 +243,14 @@ export class QuizService {
     return this.shuffleArray(options);
   }
 
+  getQuestionCountForTopic(topicId: string): number {
+    return this.questionCountByTopicId.get(topicId) ?? 0;
+  }
+
+  getQuestionCountForTopics(topicIds: readonly string[]): number {
+    return topicIds.reduce((total, topicId) => total + this.getQuestionCountForTopic(topicId), 0);
+  }
+
   private shuffleArray<T>(items: readonly T[]): T[] {
     const shuffled = [...items];
     for (let i = shuffled.length - 1; i > 0; i -= 1) {
@@ -194,5 +262,76 @@ export class QuizService {
 
   private topicNameById(topicId: string): string {
     return this.topics.find((topic) => topic.id === topicId)?.name ?? topicId;
+  }
+
+  private buildQuestionCountByTopicId(questions: readonly Question[]): Map<string, number> {
+    const map = new Map<string, number>();
+    for (const question of questions) {
+      map.set(question.topicId, (map.get(question.topicId) ?? 0) + 1);
+    }
+    return map;
+  }
+
+  private normalizeMasterData(masterTopics: MasterTopic[]): { topics: Topic[]; questions: Question[] } {
+    if (!Array.isArray(masterTopics)) {
+      return { topics: [], questions: [] };
+    }
+
+    const topics: Topic[] = [];
+    const questions: Question[] = [];
+
+    for (const topic of masterTopics) {
+      if (!topic || typeof topic.id !== 'string' || typeof topic.name !== 'string') {
+        continue;
+      }
+
+      topics.push({
+        id: topic.id,
+        name: topic.name,
+        description: typeof topic.description === 'string' ? topic.description : '',
+      });
+
+      if (!Array.isArray(topic.questions)) {
+        continue;
+      }
+
+      for (const question of topic.questions) {
+        const questionText = typeof question.text === 'string' ? question.text : question.questionText;
+        if (!question || typeof question.id !== 'string' || typeof questionText !== 'string') {
+          continue;
+        }
+
+        if (!Array.isArray(question.options) || !question.options.length) {
+          continue;
+        }
+
+        const options = question.options
+          .filter((option) => option && typeof option.id === 'string' && typeof option.text === 'string')
+          .map((option) => ({
+            id: option.id,
+            text: option.text,
+          }));
+
+        if (!options.length) {
+          continue;
+        }
+
+        const isValidCorrectOption = options.some((option) => option.id === question.correctOptionId);
+        if (!isValidCorrectOption) {
+          continue;
+        }
+
+        questions.push({
+          id: question.id,
+          topicId: topic.id,
+          text: questionText,
+          options,
+          correctOptionId: question.correctOptionId,
+          userSelectedOptionId: null,
+        });
+      }
+    }
+
+    return { topics, questions };
   }
 }

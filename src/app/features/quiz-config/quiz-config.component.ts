@@ -1,8 +1,9 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { DEFAULT_QUIZ_CONFIG } from '../../core/data/quiz.data';
 import { QuizService } from '../../core/services/quiz.service';
+import { ThemeService } from '../../core/services/theme.service';
 
 @Component({
   selector: 'app-quiz-config',
@@ -10,17 +11,48 @@ import { QuizService } from '../../core/services/quiz.service';
   imports: [FormsModule],
   templateUrl: './quiz-config.component.html',
 })
-export class QuizConfigComponent {
+export class QuizConfigComponent implements OnInit {
   private readonly quizService = inject(QuizService);
   private readonly router = inject(Router);
+  private readonly themeService = inject(ThemeService);
 
-  readonly topics = this.quizService.topics;
+  get topics() {
+    return this.quizService.topics;
+  }
+
+  get isDarkTheme(): boolean {
+    return this.themeService.isDark();
+  }
 
   questionCount = DEFAULT_QUIZ_CONFIG.questionCount;
   shuffleQuestions = DEFAULT_QUIZ_CONFIG.shuffleQuestions;
   shuffleAnswers = DEFAULT_QUIZ_CONFIG.shuffleAnswers;
   selectedTopicIds = [...DEFAULT_QUIZ_CONFIG.selectedTopicIds];
   showTopicValidationError = false;
+  hasSelection = true;
+
+  get selectedQuestionsPoolSize(): number {
+    return this.quizService.getQuestionCountForTopics(this.selectedTopicIds);
+  }
+
+  get maxQuestionCount(): number {
+    return Math.max(1, this.selectedQuestionsPoolSize);
+  }
+
+  get middleQuestionCount(): number {
+    return Math.max(1, Math.ceil(this.maxQuestionCount / 2));
+  }
+
+  ngOnInit(): void {
+    const availableTopicIds = new Set(this.topics.map((topic) => topic.id));
+    this.selectedTopicIds = this.selectedTopicIds.filter((topicId) => availableTopicIds.has(topicId));
+
+    if (!this.selectedTopicIds.length && this.topics.length) {
+      this.selectedTopicIds = [this.topics[0].id];
+    }
+
+    this.syncQuestionCountWithSelection();
+  }
 
   isTopicSelected(topicId: string): boolean {
     return this.selectedTopicIds.includes(topicId);
@@ -33,6 +65,7 @@ export class QuizConfigComponent {
       this.selectedTopicIds = [...this.selectedTopicIds, topicId];
     }
     this.showTopicValidationError = false;
+    this.syncQuestionCountWithSelection();
   }
 
   startQuiz(): void {
@@ -42,7 +75,7 @@ export class QuizConfigComponent {
     }
 
     this.quizService.startQuiz({
-      questionCount: this.questionCount,
+      questionCount: Math.min(this.questionCount, this.maxQuestionCount),
       shuffleQuestions: this.shuffleQuestions,
       shuffleAnswers: this.shuffleAnswers,
       selectedTopicIds: this.selectedTopicIds,
@@ -70,5 +103,24 @@ export class QuizConfigComponent {
       return 'w-5 h-5 rounded-full border-2 border-primary flex items-center justify-center bg-primary/10';
     }
     return 'w-5 h-5 rounded-full border-2 border-slate-300 dark:border-slate-600 group-hover:border-primary group-hover:bg-primary/10 flex items-center justify-center';
+  }
+
+  onQuestionCountChange(value: number | string): void {
+    const nextValue = Number(value);
+    if (Number.isNaN(nextValue)) {
+      this.questionCount = 1;
+      return;
+    }
+
+    this.questionCount = Math.max(1, Math.min(nextValue, this.maxQuestionCount));
+  }
+
+  toggleTheme(): void {
+    this.themeService.toggleTheme();
+  }
+
+  private syncQuestionCountWithSelection(): void {
+    this.hasSelection = this.selectedTopicIds.length > 0;
+    this.questionCount = Math.max(1, Math.min(this.questionCount, this.maxQuestionCount));
   }
 }

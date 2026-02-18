@@ -5,7 +5,16 @@
     <main class="flex-1 overflow-y-auto pb-24 relative">
       <div #resultsContainer>
         <div class="sticky top-0 z-10 bg-background-light/95 dark:bg-results-background-dark/95 backdrop-blur-sm pt-8 pb-3 px-4 border-b border-transparent dark:border-surface-highlight/50">
-          <h1 class="text-3xl font-bold tracking-tight mb-2 dark:text-white">Results Review</h1>
+          <div class="flex items-center justify-between mb-2">
+            <h1 class="text-3xl font-bold tracking-tight dark:text-white">Results Review</h1>
+            <button
+              type="button"
+              class="h-10 px-4 rounded-full border border-slate-300 dark:border-surface-highlight bg-white/90 dark:bg-surface-dark text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-white dark:hover:bg-surface-highlight transition-colors"
+              (click)="backToSetup()"
+            >
+              Back to Setup
+            </button>
+          </div>
           <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">
             Score: {{ results().correct }}/{{ results().total }} ({{ results().scorePercent }}%)
           </p>
