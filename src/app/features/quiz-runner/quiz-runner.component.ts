@@ -80,7 +80,8 @@ export class QuizRunnerComponent {
   optionTextClasses(question: Question, option: Option): string {
     const isSelected = question.userSelectedOptionId === option.id;
     return isSelected
-      ? 'ml-5 text-base font-semibold text-slate-900 dark:text-white'
-      : 'ml-5 text-base font-medium text-slate-800 dark:text-white/90 group-hover:text-slate-900 dark:group-hover:text-white';
+      ? 'ml-5 text-sm md:text-base font-medium md:font-semibold leading-snug break-words text-slate-900 dark:text-white'
+      : 'ml-5 text-sm md:text-base font-medium leading-snug break-words text-slate-800 dark:text-white/90 group-hover:text-slate-900 dark:group-hover:text-white';
   }
 }
+

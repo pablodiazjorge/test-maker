@@ -3,8 +3,8 @@
 >
   @if (questions().length) {
     <main class="flex-1 overflow-y-auto pb-24 relative">
-      <div>
-        <div class="sticky top-0 z-10 bg-background-light/95 dark:bg-results-background-dark/95 backdrop-blur-sm pt-8 pb-3 px-4 border-b border-transparent dark:border-surface-highlight/50">
+      <div class="w-full md:w-[70%] md:mx-auto">
+        <div class="sticky top-0 z-10 bg-background-light/95 dark:bg-results-background-dark/95 backdrop-blur-sm pt-8 pb-3 px-4 md:px-0 border-b border-transparent dark:border-surface-highlight/50">
           <div class="flex items-center justify-between mb-2">
             <h1 class="text-3xl font-bold tracking-tight dark:text-white">Results Review</h1>
             <button
@@ -25,7 +25,7 @@
           </div>
         </div>
 
-        <div class="px-4 py-4 space-y-4">
+        <div class="px-4 md:px-0 py-4 space-y-4">
           @for (question of filteredQuestions(); track question.id) {
             <div [class]="questionCardClasses(question)">
               <div class="p-4 flex flex-col gap-3">
@@ -90,7 +90,7 @@
       </div>
     </main>
 
-    <div class="fixed bottom-6 right-4 z-30 flex flex-col items-end gap-2">
+    <div class="fixed bottom-6 right-4 md:right-[15%] z-30 flex flex-col items-end gap-2">
       <button
         type="button"
         class="group flex items-center justify-center gap-2 bg-primary hover:bg-blue-600 text-white shadow-lg shadow-blue-900/20 rounded-full h-12 pl-4 pr-5 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
@@ -106,7 +106,7 @@
       }
     </div>
   } @else {
-    <main class="min-h-screen max-w-md mx-auto w-full px-6 py-12 flex flex-col items-center justify-center text-center gap-4">
+    <main class="min-h-screen max-w-md md:max-w-none mx-auto w-full md:w-[70%] px-6 md:px-0 py-12 flex flex-col items-center justify-center text-center gap-4">
       <h1 class="text-2xl font-bold text-white">No quiz results yet</h1>
       <p class="text-sm text-muted-foreground">Complete a quiz session to review results.</p>
       <button
@@ -119,3 +119,4 @@
     </main>
   }
 </div>
+
