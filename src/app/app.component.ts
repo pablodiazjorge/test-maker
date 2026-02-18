@@ -1,16 +1,20 @@
-import { Component } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
   imports: [RouterOutlet],
   template: `
-    <h1>Welcome to {{title}}!</h1>
-
     <router-outlet />
   `,
   styles: [],
 })
 export class AppComponent {
-  title = 'test-maker';
+  private readonly document = inject(DOCUMENT);
+
+  constructor() {
+    this.document.documentElement.classList.add('dark');
+    this.document.body.classList.add('dark');
+  }
 }

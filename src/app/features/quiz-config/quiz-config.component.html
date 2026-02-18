@@ -1,0 +1,111 @@
+<div
+  class="bg-background-light dark:bg-background-dark font-display antialiased text-slate-900 dark:text-white min-h-screen flex flex-col justify-between"
+>
+  <main class="flex-1 px-4 py-8 space-y-6 overflow-y-auto pb-24 max-w-md mx-auto w-full">
+  <div class="space-y-2 pt-4">
+    <h2 class="text-3xl font-bold tracking-tight">Setup Session</h2>
+    <p class="text-sm text-slate-500 dark:text-muted-foreground">
+      Customize your quiz parameters below to start a new challenge.
+    </p>
+  </div>
+
+  <div class="bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark p-5 space-y-8 shadow-sm">
+    <div class="space-y-4">
+      <div class="flex justify-between items-end">
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Number of Questions</label>
+        <div class="flex items-center">
+          <input
+            class="w-16 text-center text-sm font-medium bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-border-dark rounded-lg py-1 px-2 focus:ring-2 focus:ring-primary/50 focus:border-primary text-slate-900 dark:text-white"
+            min="1"
+            max="50"
+            type="number"
+            [(ngModel)]="questionCount"
+          />
+        </div>
+      </div>
+
+      <div class="relative pt-2 pb-2">
+        <input
+          class="w-full h-2 bg-slate-200 dark:bg-border-dark rounded-lg appearance-none cursor-pointer accent-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
+          min="1"
+          max="50"
+          step="1"
+          type="range"
+          [(ngModel)]="questionCount"
+        />
+        <div class="flex justify-between text-xs text-slate-400 dark:text-muted-foreground mt-2 font-medium">
+          <span>1</span>
+          <span>25</span>
+          <span>50</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="h-px bg-slate-200 dark:bg-border-dark w-full"></div>
+
+    <div class="space-y-6">
+      <div class="flex items-center justify-between">
+        <div class="flex flex-col">
+          <span class="text-sm font-medium text-slate-900 dark:text-white">Shuffle Questions</span>
+          <span class="text-xs text-slate-500 dark:text-muted-foreground">Randomize question order</span>
+        </div>
+        <label class="relative inline-flex items-center cursor-pointer">
+          <input class="sr-only peer" type="checkbox" [(ngModel)]="shuffleQuestions" />
+          <div
+            class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 dark:peer-focus:ring-primary/30 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"
+          ></div>
+        </label>
+      </div>
+
+      <div class="flex items-center justify-between">
+        <div class="flex flex-col">
+          <span class="text-sm font-medium text-slate-900 dark:text-white">Shuffle Answers</span>
+          <span class="text-xs text-slate-500 dark:text-muted-foreground">Randomize answer order</span>
+        </div>
+        <label class="relative inline-flex items-center cursor-pointer">
+          <input class="sr-only peer" type="checkbox" [(ngModel)]="shuffleAnswers" />
+          <div
+            class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 dark:peer-focus:ring-primary/30 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"
+          ></div>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <div class="space-y-3">
+    <h3 class="text-sm font-semibold text-slate-900 dark:text-white px-1">Select Topic</h3>
+    <div class="grid grid-cols-1 gap-3">
+      @for (topic of topics; track topic.id) {
+        <button type="button" [class]="topicButtonClasses(topic.id)" (click)="toggleTopic(topic.id)">
+          <div>
+            <span [class]="topicNameClasses(topic.id)">{{ topic.name }}</span>
+            <span class="block text-xs text-slate-500 dark:text-muted-foreground mt-0.5">{{ topic.description }}</span>
+          </div>
+          <div [class]="topicIndicatorClasses(topic.id)">
+            <div
+              class="w-2.5 h-2.5 rounded-full bg-primary transition-opacity"
+              [class.opacity-100]="isTopicSelected(topic.id)"
+              [class.opacity-0]="!isTopicSelected(topic.id)"
+            ></div>
+          </div>
+        </button>
+      }
+    </div>
+
+    @if (showTopicValidationError) {
+      <p class="text-xs text-red-500 px-1">Select at least one topic before starting the quiz.</p>
+    }
+  </div>
+
+  <div class="pt-4">
+    <button
+      type="button"
+      class="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-4 px-6 rounded-xl shadow-lg shadow-primary/25 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+      (click)="startQuiz()"
+    >
+      <span class="material-symbols-outlined text-[20px]">play_arrow</span>
+      Start Quiz
+    </button>
+  </div>
+  </main>
+</div>

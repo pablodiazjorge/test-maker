@@ -1,0 +1,112 @@
+<div
+  class="bg-background-light dark:bg-results-background-dark text-slate-900 dark:text-slate-50 font-display min-h-screen flex flex-col overflow-hidden relative selection:bg-primary selection:text-white"
+>
+  @if (questions().length) {
+    <main class="flex-1 overflow-y-auto pb-24 relative">
+      <div #resultsContainer>
+        <div class="sticky top-0 z-10 bg-background-light/95 dark:bg-results-background-dark/95 backdrop-blur-sm pt-8 pb-3 px-4 border-b border-transparent dark:border-surface-highlight/50">
+          <h1 class="text-3xl font-bold tracking-tight mb-2 dark:text-white">Results Review</h1>
+          <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">
+            Score: {{ results().correct }}/{{ results().total }} ({{ results().scorePercent }}%)
+          </p>
+          <div class="flex p-1 bg-slate-200 dark:bg-surface-highlight rounded-lg">
+            <button type="button" [class]="filterButtonClasses('all')" (click)="setFilter('all')">All</button>
+            <button type="button" [class]="filterButtonClasses('incorrect')" (click)="setFilter('incorrect')">Incorrect</button>
+            <button type="button" [class]="filterButtonClasses('unanswered')" (click)="setFilter('unanswered')">Unanswered</button>
+          </div>
+        </div>
+
+        <div class="px-4 py-4 space-y-4">
+          @for (question of filteredQuestions(); track question.id) {
+            <div [class]="questionCardClasses(question)">
+              <div class="p-4 flex flex-col gap-3">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span [class]="questionStatusIconClasses(question)">
+                      <span class="material-symbols-outlined text-sm font-bold">{{ questionStatusIcon(question) }}</span>
+                    </span>
+                    <h3 [class]="questionTitleClasses(question)">Question {{ questionNumber(question.id) }}</h3>
+                  </div>
+                  <span class="text-xs font-medium text-slate-400">{{ topicName(question.topicId) }}</span>
+                </div>
+
+                <p class="text-base font-medium leading-relaxed dark:text-slate-200">{{ question.text }}</p>
+
+                <div class="flex flex-col gap-2 mt-1">
+                  @for (option of question.options; track option.id) {
+                    <div [class]="optionRowClasses(question, option)">
+                      @if (
+                        (isIncorrect(question) && (isSelectedOption(question, option) || isCorrectOption(question, option))) ||
+                        (isCorrect(question) && isCorrectOption(question, option))
+                      ) {
+                        <div
+                          class="absolute left-0 top-0 bottom-0 w-1"
+                          [class.bg-error]="isIncorrect(question) && isSelectedOption(question, option)"
+                          [class.bg-success]="isCorrectOption(question, option) && !isUnanswered(question)"
+                        ></div>
+                      }
+
+                      <div class="flex items-center gap-3 w-full" [class.pl-1]="isCorrectOption(question, option) || isSelectedOption(question, option)">
+                        <div [class]="optionIndicatorClasses(question, option)">
+                          @if (isIncorrect(question) && isSelectedOption(question, option)) {
+                            <div class="w-2.5 h-2.5 rounded-full bg-error"></div>
+                          } @else if (isCorrectOption(question, option) && !isUnanswered(question)) {
+                            <span class="material-symbols-outlined text-[14px] font-bold" [class.text-success]="!isCorrect(question)" [class.text-white]="isCorrect(question)">check</span>
+                          } @else if (isUnanswered(question) && isCorrectOption(question, option)) {
+                            <span class="material-symbols-outlined text-primary text-[14px] font-bold">check</span>
+                          }
+                        </div>
+                        <span [class]="optionTextClasses(question, option)">{{ option.text }}</span>
+                      </div>
+
+                      @if (optionMarker(question, option) === 'close') {
+                        <span class="material-symbols-outlined text-error text-xl">close</span>
+                      } @else if (optionMarker(question, option) === 'Correct') {
+                        <span class="text-xs font-bold text-success uppercase tracking-wider">Correct</span>
+                      } @else if (optionMarker(question, option) === 'Answer') {
+                        <span class="text-xs font-medium text-primary uppercase tracking-wider">Answer</span>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+          } @empty {
+            <div class="rounded-xl border border-slate-200 dark:border-surface-highlight bg-white dark:bg-surface-dark p-6 text-center">
+              <p class="text-sm text-slate-500 dark:text-slate-400">No questions in this filter.</p>
+            </div>
+          }
+          <div class="h-20"></div>
+        </div>
+      </div>
+    </main>
+
+    <div class="fixed bottom-6 right-4 z-30 flex flex-col items-end gap-2">
+      <button
+        type="button"
+        class="group flex items-center justify-center gap-2 bg-primary hover:bg-blue-600 text-white shadow-lg shadow-blue-900/20 rounded-full h-12 pl-4 pr-5 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+        [disabled]="isExporting()"
+        (click)="exportPdf()"
+      >
+        <span class="material-symbols-outlined text-xl">picture_as_pdf</span>
+        <span class="text-sm font-semibold tracking-wide">{{ isExporting() ? 'Exporting...' : 'Export PDF' }}</span>
+      </button>
+
+      @if (exportError()) {
+        <p class="text-xs text-red-500 bg-white/90 dark:bg-surface-dark px-2 py-1 rounded-md">{{ exportError() }}</p>
+      }
+    </div>
+  } @else {
+    <main class="min-h-screen max-w-md mx-auto w-full px-6 py-12 flex flex-col items-center justify-center text-center gap-4">
+      <h1 class="text-2xl font-bold text-white">No quiz results yet</h1>
+      <p class="text-sm text-muted-foreground">Complete a quiz session to review results.</p>
+      <button
+        type="button"
+        class="bg-primary hover:bg-primary/90 text-white font-semibold py-3 px-5 rounded-xl transition-all"
+        (click)="backToSetup()"
+      >
+        Back to Setup
+      </button>
+    </main>
+  }
+</div>

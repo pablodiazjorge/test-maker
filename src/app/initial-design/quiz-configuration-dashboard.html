@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Quiz Setup Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "primary-foreground": "#ffffff",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                        "card-dark": "#192633",
+                        "border-dark": "#233648",
+                        "muted-foreground": "#92adc9",
+                    },
+                    fontFamily: {
+                        "display": ["Lexend", "sans-serif"],
+                        "sans": ["Lexend", "sans-serif"],
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+    </style>
+<style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display antialiased text-slate-900 dark:text-white min-h-screen flex flex-col justify-between">
+<main class="flex-1 px-4 py-8 space-y-6 overflow-y-auto pb-24 max-w-md mx-auto w-full">
+<div class="space-y-2 pt-4">
+<h2 class="text-3xl font-bold tracking-tight">Setup Session</h2>
+<p class="text-sm text-slate-500 dark:text-muted-foreground">Customize your quiz parameters below to start a new challenge.</p>
+</div>
+<div class="bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark p-5 space-y-8 shadow-sm">
+<div class="space-y-4">
+<div class="flex justify-between items-end">
+<label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Number of Questions
+                </label>
+<div class="flex items-center">
+<input class="w-16 text-center text-sm font-medium bg-slate-50 dark:bg-background-dark border border-slate-200 dark:border-border-dark rounded-lg py-1 px-2 focus:ring-2 focus:ring-primary/50 focus:border-primary text-slate-900 dark:text-white" max="50" min="5" type="number" value="15"/>
+</div>
+</div>
+<div class="relative pt-2 pb-2">
+<input class="w-full h-2 bg-slate-200 dark:bg-border-dark rounded-lg appearance-none cursor-pointer accent-primary focus:outline-none focus:ring-2 focus:ring-primary/50" max="50" min="5" step="5" type="range" value="15"/>
+<div class="flex justify-between text-xs text-slate-400 dark:text-muted-foreground mt-2 font-medium">
+<span>5</span>
+<span>25</span>
+<span>50</span>
+</div>
+</div>
+</div>
+<div class="h-px bg-slate-200 dark:bg-border-dark w-full"></div>
+<div class="space-y-6">
+<div class="flex items-center justify-between group cursor-pointer">
+<div class="flex flex-col">
+<span class="text-sm font-medium text-slate-900 dark:text-white">Shuffle Questions</span>
+<span class="text-xs text-slate-500 dark:text-muted-foreground">Randomize question order</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 dark:peer-focus:ring-primary/30 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+</label>
+</div>
+<div class="flex items-center justify-between group cursor-pointer">
+<div class="flex flex-col">
+<span class="text-sm font-medium text-slate-900 dark:text-white">Shuffle Answers</span>
+<span class="text-xs text-slate-500 dark:text-muted-foreground">Randomize answer order</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 dark:peer-focus:ring-primary/30 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+</label>
+</div>
+</div>
+</div>
+<div class="space-y-3">
+<h3 class="text-sm font-semibold text-slate-900 dark:text-white px-1">Select Topic</h3>
+<div class="grid grid-cols-1 gap-3">
+<button class="flex items-center justify-between w-full p-4 bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl hover:border-primary/50 dark:hover:border-primary/50 transition-all group text-left shadow-sm">
+<div>
+<span class="block text-sm font-semibold text-slate-900 dark:text-white group-hover:text-primary transition-colors">Tema 1</span>
+<span class="block text-xs text-slate-500 dark:text-muted-foreground mt-0.5">Descripción Tema 1</span>
+</div>
+<div class="w-5 h-5 rounded-full border-2 border-slate-300 dark:border-slate-600 group-hover:border-primary group-hover:bg-primary/10 flex items-center justify-center">
+<div class="w-2.5 h-2.5 rounded-full bg-primary opacity-0 group-hover:opacity-100 transition-opacity"></div>
+</div>
+</button>
+<button class="flex items-center justify-between w-full p-4 bg-white dark:bg-card-dark border border-primary dark:border-primary rounded-xl ring-1 ring-primary/20 transition-all text-left shadow-md shadow-primary/5">
+<div>
+<span class="block text-sm font-semibold text-slate-900 dark:text-white text-primary">Tema 2</span>
+<span class="block text-xs text-slate-500 dark:text-muted-foreground mt-0.5">Descripción Tema 2</span>
+</div>
+<div class="w-5 h-5 rounded-full border-2 border-primary flex items-center justify-center bg-primary/10">
+<div class="w-2.5 h-2.5 rounded-full bg-primary"></div>
+</div>
+</button>
+<button class="flex items-center justify-between w-full p-4 bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl hover:border-primary/50 dark:hover:border-primary/50 transition-all group text-left shadow-sm">
+<div>
+<span class="block text-sm font-semibold text-slate-900 dark:text-white group-hover:text-primary transition-colors">Tema 3</span>
+<span class="block text-xs text-slate-500 dark:text-muted-foreground mt-0.5">Descripción Tema 3</span>
+</div>
+<div class="w-5 h-5 rounded-full border-2 border-slate-300 dark:border-slate-600 group-hover:border-primary group-hover:bg-primary/10 flex items-center justify-center">
+<div class="w-2.5 h-2.5 rounded-full bg-primary opacity-0 group-hover:opacity-100 transition-opacity"></div>
+</div>
+</button>
+</div>
+</div>
+<div class="pt-4">
+<button class="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-4 px-6 rounded-xl shadow-lg shadow-primary/25 transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[20px]">play_arrow</span>
+            Start Quiz
+        </button>
+</div>
+</main>
+</body></html>

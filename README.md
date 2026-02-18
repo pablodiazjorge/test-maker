@@ -1,59 +1,40 @@
 # TestMaker
+Aplicacion de quizzes en Angular (standalone components) con estado global usando Signals.
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.1.7.
+## Stack
+- Angular 19
+- Angular Signals
+- Tailwind CSS (CDN)
 
-## Development server
-
-To start a local development server, run:
-
+## Ejecutar
 ```bash
-ng serve
+npm install
+npm start
 ```
+Abre `http://localhost:4200/`.
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
+## Build
 ```bash
-ng generate component component-name
+npm run build
 ```
+Salida en `dist/test-maker`.
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Rutas
+- `/` configuracion del quiz
+- `/quiz` ejecucion del quiz
+- `/results` revision de resultados
 
-```bash
-ng generate --help
-```
+`/quiz` y `/results` estan protegidas por `activeQuizGuard`.
 
-## Building
+## Estructura
+- `src/app/core/data` modelos + mock data
+- `src/app/core/services` `QuizService` (Signals + logica de negocio)
+- `src/app/core/guards` guards de navegacion
+- `src/app/features/quiz-config` pantalla de configuracion
+- `src/app/features/quiz-runner` pantalla interactiva del quiz
+- `src/app/features/quiz-results` pantalla de resultados + export PDF
+- `src/app/initial-design` HTML estaticos de referencia
 
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## Notas
+- El modo oscuro se fuerza por clase `dark`.
+- Export PDF usa `html2canvas` y `jspdf` via CDN en `src/index.html`.
