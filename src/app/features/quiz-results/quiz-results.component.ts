@@ -1,14 +1,9 @@
-import { Component, computed, ElementRef, inject, signal, ViewChild } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Option, Question } from '../../core/data/quiz.data';
 import { QuizService } from '../../core/services/quiz.service';
 
 type ResultsFilter = 'all' | 'incorrect' | 'unanswered';
-
-type Html2CanvasFn = (
-  element: HTMLElement,
-  options?: { scale?: number; useCORS?: boolean; backgroundColor?: string },
-) => Promise<HTMLCanvasElement>;
 
 interface JsPdfInstance {
   internal: {
@@ -17,14 +12,15 @@ interface JsPdfInstance {
       getHeight(): number;
     };
   };
-  addImage(
-    imageData: string,
-    format: 'PNG',
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-  ): void;
+  setFont(fontName: string, fontStyle?: 'normal' | 'bold' | 'italic' | 'bolditalic'): void;
+  setFontSize(size: number): void;
+  setTextColor(red: number, green: number, blue: number): void;
+  setDrawColor(red: number, green: number, blue: number): void;
+  setFillColor(red: number, green: number, blue: number): void;
+  rect(x: number, y: number, width: number, height: number, style?: 'S' | 'F' | 'FD' | 'DF'): void;
+  text(text: string | string[], x: number, y: number): void;
+  splitTextToSize(text: string, maxWidth: number): string[];
+  line(x1: number, y1: number, x2: number, y2: number): void;
   addPage(): void;
   save(fileName: string): void;
 }
@@ -35,7 +31,6 @@ interface JsPdfConstructor {
 
 declare global {
   interface Window {
-    html2canvas?: Html2CanvasFn;
     jspdf?: {
       jsPDF?: JsPdfConstructor;
     };
@@ -50,8 +45,6 @@ declare global {
 export class QuizResultsComponent {
   private readonly quizService = inject(QuizService);
   private readonly router = inject(Router);
-
-  @ViewChild('resultsContainer') resultsContainer?: ElementRef<HTMLElement>;
 
   readonly results = this.quizService.results;
   readonly questions = this.quizService.questions;
@@ -239,11 +232,8 @@ export class QuizResultsComponent {
   }
 
   async exportPdf(): Promise<void> {
-    const html2canvas = window.html2canvas;
     const JsPDF = window.jspdf?.jsPDF;
-    const container = this.resultsContainer?.nativeElement;
-
-    if (!html2canvas || !JsPDF || !container) {
+    if (!JsPDF) {
       this.exportError.set('PDF export libraries are not available.');
       return;
     }
@@ -252,32 +242,104 @@ export class QuizResultsComponent {
     this.exportError.set(null);
 
     try {
-      const canvas = await html2canvas(container, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#09090b',
-      });
-
-      const imageData = canvas.toDataURL('image/png');
       const pdf = new JsPDF('p', 'pt', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imageWidth = pdfWidth;
-      const imageHeight = (canvas.height * imageWidth) / canvas.width;
-      let heightLeft = imageHeight;
-      let position = 0;
+      const margin = 40;
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const contentWidth = pageWidth - margin * 2;
+      const lineHeight = 15;
+      const exportedQuestions = this.filteredQuestions();
+      let y = 52;
 
-      pdf.addImage(imageData, 'PNG', 0, position, imageWidth, imageHeight);
-      heightLeft -= pdfHeight;
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(20);
+      pdf.setTextColor(15, 23, 42);
+      pdf.text('Quiz Results Report', margin, y);
+      y += 24;
 
-      while (heightLeft > 0) {
-        position = heightLeft - imageHeight;
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(10);
+      pdf.setTextColor(100, 116, 139);
+      pdf.text(`Generated: ${new Date().toLocaleString()}`, margin, y);
+      y += 14;
+      pdf.text(`Filter: ${this.exportFilterLabel()}`, margin, y);
+      y += 20;
+
+      const summary = this.results();
+      const summaryHeight = 74;
+      if (y + summaryHeight > pageHeight - margin) {
         pdf.addPage();
-        pdf.addImage(imageData, 'PNG', 0, position, imageWidth, imageHeight);
-        heightLeft -= pdfHeight;
+        y = margin;
+      }
+      pdf.setFillColor(248, 250, 252);
+      pdf.setDrawColor(226, 232, 240);
+      pdf.rect(margin, y, contentWidth, summaryHeight, 'FD');
+
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(12);
+      pdf.setTextColor(15, 23, 42);
+      pdf.text(`Score: ${summary.correct}/${summary.total} (${summary.scorePercent}%)`, margin + 12, y + 20);
+
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(11);
+      pdf.setTextColor(51, 65, 85);
+      pdf.text(`Answered: ${summary.answered}`, margin + 12, y + 40);
+      pdf.text(`Correct: ${summary.correct}`, margin + 126, y + 40);
+      pdf.text(`Incorrect: ${summary.incorrect}`, margin + 220, y + 40);
+      pdf.text(`Unanswered: ${summary.unanswered}`, margin + 330, y + 40);
+      pdf.text(`Questions exported: ${exportedQuestions.length}`, margin + 12, y + 58);
+      y += summaryHeight + 18;
+
+      for (const question of exportedQuestions) {
+        const statusLabel = this.questionStatusLabel(question);
+        const statusColor = this.questionStatusColor(question);
+        const questionTitle = `Question ${this.questionNumber(question.id)} - ${this.topicName(question.topicId)} - ${statusLabel}`;
+        const questionLines = pdf.splitTextToSize(question.text, contentWidth);
+        const optionGroups = question.options.map((option, index) => {
+          const optionText = `${this.optionLetter(index)}) ${option.text}${this.optionPdfSuffix(question, option)}`;
+          return {
+            option,
+            lines: pdf.splitTextToSize(optionText, contentWidth - 12),
+          };
+        });
+        const optionsHeight = lineHeight + optionGroups.reduce((sum, group) => sum + group.lines.length * lineHeight + 3, 0);
+        const estimatedHeight = 22 + questionLines.length * lineHeight + 8 + optionsHeight + 14;
+
+        if (y + estimatedHeight > pageHeight - margin) {
+          pdf.addPage();
+          y = margin;
+        }
+
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(12);
+        pdf.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
+        pdf.text(questionTitle, margin, y);
+        y += 18;
+
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(11);
+        pdf.setTextColor(30, 41, 59);
+        pdf.text(questionLines, margin, y);
+        y += questionLines.length * lineHeight + 4;
+
+        pdf.setFontSize(10);
+        pdf.setTextColor(100, 116, 139);
+        pdf.text('Options:', margin, y);
+        y += lineHeight;
+
+        for (const group of optionGroups) {
+          const optionColor = this.optionPdfColor(question, group.option);
+          pdf.setTextColor(optionColor[0], optionColor[1], optionColor[2]);
+          pdf.text(group.lines, margin + 12, y);
+          y += group.lines.length * lineHeight + 3;
+        }
+
+        pdf.setDrawColor(226, 232, 240);
+        pdf.line(margin, y, pageWidth - margin, y);
+        y += 14;
       }
 
-      pdf.save('quiz-results.pdf');
+      pdf.save('quiz-results-report.pdf');
     } catch {
       this.exportError.set('Failed to generate PDF.');
     } finally {
@@ -288,5 +350,73 @@ export class QuizResultsComponent {
   backToSetup(): void {
     this.quizService.resetQuiz();
     void this.router.navigate(['/']);
+  }
+
+  private exportFilterLabel(): string {
+    if (this.filter() === 'incorrect') {
+      return 'Incorrect';
+    }
+    if (this.filter() === 'unanswered') {
+      return 'Unanswered';
+    }
+    return 'All';
+  }
+
+  private questionStatusLabel(question: Question): string {
+    if (this.isCorrect(question)) {
+      return 'Correct';
+    }
+    if (this.isIncorrect(question)) {
+      return 'Incorrect';
+    }
+    return 'Unanswered';
+  }
+
+  private questionStatusColor(question: Question): [number, number, number] {
+    if (this.isCorrect(question)) {
+      return [5, 150, 105];
+    }
+    if (this.isIncorrect(question)) {
+      return [220, 38, 38];
+    }
+    return [100, 116, 139];
+  }
+
+  private optionTextById(question: Question, optionId: string | null | undefined): string | null {
+    if (!optionId) {
+      return null;
+    }
+    return question.options.find((option) => option.id === optionId)?.text ?? null;
+  }
+
+  private optionLetter(index: number): string {
+    return String.fromCharCode(97 + index);
+  }
+
+  private optionPdfSuffix(question: Question, option: Option): string {
+    const isSelected = this.isSelectedOption(question, option);
+    const isCorrect = this.isCorrectOption(question, option);
+    if (isSelected && isCorrect) {
+      return ' (Your answer, correct)';
+    }
+    if (isSelected) {
+      return ' (Your answer)';
+    }
+    if (isCorrect) {
+      return ' (Correct)';
+    }
+    return '';
+  }
+
+  private optionPdfColor(question: Question, option: Option): [number, number, number] {
+    const isSelected = this.isSelectedOption(question, option);
+    const isCorrect = this.isCorrectOption(question, option);
+    if (isSelected && !isCorrect) {
+      return [220, 38, 38];
+    }
+    if (isCorrect) {
+      return [5, 150, 105];
+    }
+    return [51, 65, 85];
   }
 }
