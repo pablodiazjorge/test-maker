@@ -47,7 +47,6 @@ export class ThemeService {
     try {
       localStorage.setItem(this.storageKey, theme);
     } catch {
-      // Ignore storage errors.
     }
   }
 
@@ -55,3 +54,4 @@ export class ThemeService {
     return this.document.documentElement.classList.contains('dark') ? 'dark' : 'light';
   }
 }
+

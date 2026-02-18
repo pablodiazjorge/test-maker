@@ -1,42 +1,36 @@
 # TestMaker
-Aplicacion de quizzes en Angular (standalone components) con estado global usando Signals.
 
-## Stack
-- Angular 19
-- Angular Signals
-- Tailwind CSS (CDN)
+Aplicacion de quizzes con Angular 19 (standalone), Signals y Tailwind CSS (CDN).
 
-## Ejecutar
-```bash
-npm install
-npm start
-```
-Abre `http://localhost:4200/`.
+## Requisitos
+- Node.js 20+
+- npm 10+
 
-## Build
-```bash
-npm run build
-```
-Salida en `dist/test-maker`.
+## Scripts
+- `npm start`: entorno local en `http://localhost:4200/`
+- `npm run build`: build de produccion en `dist/test-maker`
+- `npm run watch`: build en modo watch
+
+## Flujo de la app
+1. Carga del banco de preguntas desde `public/assets/master-data.json` (APP_INITIALIZER).
+2. Setup de sesion en `/`: temas, numero de preguntas y shuffles.
+3. Ejecucion en `/quiz`: navegacion y respuesta por pregunta.
+4. Revision en `/results`: filtros y exportacion PDF con jsPDF.
 
 ## Rutas
-- `/` configuracion del quiz
-- `/quiz` ejecucion del quiz
-- `/results` revision de resultados
-
-`/quiz` y `/results` estan protegidas por `activeQuizGuard`.
+- `/` Setup Session
+- `/quiz` Quiz Runner (protegida por `activeQuizGuard`)
+- `/results` Results Review (protegida por `activeQuizGuard`)
 
 ## Estructura
-- `src/app/core/data` modelos y contratos
-- `src/app/core/services` `QuizService` (Signals + logica de negocio)
-- `src/app/core/guards` guards de navegacion
-- `src/app/features/quiz-config` pantalla de configuracion
-- `src/app/features/quiz-runner` pantalla interactiva del quiz
-- `src/app/features/quiz-results` pantalla de resultados + export PDF
-- `src/app/initial-design` HTML estaticos de referencia
-- `public/assets/master-data.json` banco de temas y preguntas
+- `src/app/core/data`: interfaces y contratos
+- `src/app/core/services`: estado global (`QuizService`) y tema (`ThemeService`)
+- `src/app/core/guards`: guards de navegacion
+- `src/app/features/quiz-config`: configuracion del quiz
+- `src/app/features/quiz-runner`: ejecucion del quiz
+- `src/app/features/quiz-results`: revision y exportacion PDF
+- `public/assets/master-data.json`: datos maestros
+- `src/app/initial-design`: HTML estaticos de referencia de diseno
 
-## Notas
-- El modo oscuro se fuerza por clase `dark`.
-- Export PDF usa `html2canvas` y `jspdf` via CDN en `src/index.html`.
-- Las preguntas se cargan desde `public/assets/master-data.json` al iniciar la app.
+## Nota preproduccion
+- Tailwind se sirve por CDN en `src/index.html`; para produccion final se recomienda integrarlo en pipeline de build.

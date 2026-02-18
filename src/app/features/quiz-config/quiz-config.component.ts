@@ -74,8 +74,6 @@ export class QuizConfigComponent implements OnInit {
     }
 
     this.syncQuestionCountWithSelection();
-
-    // Remove persistent focus ring after pointer/touch interaction.
     if (event instanceof MouseEvent && event.detail > 0) {
       const target = event.currentTarget;
       if (target instanceof HTMLElement) {
@@ -194,3 +192,4 @@ export class QuizConfigComponent implements OnInit {
     this.questionCount = Math.max(1, Math.min(this.questionCount, this.maxQuestionCount));
   }
 }
+
