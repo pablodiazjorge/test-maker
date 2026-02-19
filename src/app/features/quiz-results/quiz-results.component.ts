@@ -349,7 +349,7 @@ export class QuizResultsComponent {
 
   backToSetup(): void {
     this.quizService.resetQuiz();
-    void this.router.navigate(['/']);
+    void this.router.navigate(['/config']);
   }
 
   private exportFilterLabel(): string {

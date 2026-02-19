@@ -54,7 +54,7 @@ export class QuizRunnerComponent {
 
   restart(): void {
     this.quizService.resetQuiz();
-    void this.router.navigate(['/']);
+    void this.router.navigate(['/config']);
   }
 
   optionLabel(index: number): string {

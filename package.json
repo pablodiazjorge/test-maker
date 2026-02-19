@@ -5,7 +5,8 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
-    "watch": "ng build --watch --configuration development"
+    "watch": "ng build --watch --configuration development",
+    "encrypt:data": "node scripts/encrypt-master-data.mjs"
   },
   "private": true,
   "dependencies": {
