@@ -2,8 +2,6 @@ import { createDecipheriv } from 'node:crypto';
 
 type JsonRecord = Record<string, unknown>;
 
-export const runtime = 'nodejs';
-
 interface RawEncryptedPayload {
   iv: string;
   data: string;
