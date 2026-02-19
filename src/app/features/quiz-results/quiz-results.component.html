@@ -106,17 +106,13 @@
       }
     </div>
   } @else {
-    <main class="min-h-screen max-w-md md:max-w-none mx-auto w-full md:w-[70%] px-6 md:px-0 py-12 flex flex-col items-center justify-center text-center gap-4">
-      <h1 class="text-2xl font-bold text-white">No quiz results yet</h1>
-      <p class="text-sm text-muted-foreground">Complete a quiz session to review results.</p>
-      <button
-        type="button"
-        class="bg-primary hover:bg-primary/90 text-white font-semibold py-3 px-5 rounded-xl transition-all"
-        (click)="backToSetup()"
-      >
-        Back to Setup
-      </button>
-    </main>
+    <app-empty-state
+      title="No quiz results yet"
+      description="Complete a quiz session to review results."
+      actionLabel="Back to Setup"
+      titleClass="text-2xl font-bold text-white"
+      (action)="backToSetup()"
+    />
   }
 </div>
 

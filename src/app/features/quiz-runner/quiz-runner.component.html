@@ -86,17 +86,12 @@
       </footer>
     </div>
   } @else {
-    <main class="min-h-screen max-w-md md:max-w-none mx-auto w-full md:w-[70%] px-6 md:px-0 py-12 flex flex-col items-center justify-center text-center gap-4">
-      <h1 class="text-2xl font-bold text-slate-900 dark:text-white">No active quiz session</h1>
-      <p class="text-sm text-muted-foreground">Start a new quiz from the setup dashboard.</p>
-      <button
-        type="button"
-        class="bg-primary hover:bg-primary/90 text-white font-semibold py-3 px-5 rounded-xl transition-all"
-        (click)="restart()"
-      >
-        Back to Setup
-      </button>
-    </main>
+    <app-empty-state
+      title="No active quiz session"
+      description="Start a new quiz from the setup dashboard."
+      actionLabel="Back to Setup"
+      (action)="restart()"
+    />
   }
 </div>
 

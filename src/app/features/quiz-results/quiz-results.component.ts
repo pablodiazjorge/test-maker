@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Option, Question } from '../../core/data/quiz.data';
 import { QuizService } from '../../core/services/quiz.service';
+import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 
 type ResultsFilter = 'all' | 'incorrect' | 'unanswered';
 
@@ -40,6 +41,7 @@ declare global {
 @Component({
   selector: 'app-quiz-results',
   standalone: true,
+  imports: [EmptyStateComponent],
   templateUrl: './quiz-results.component.html',
 })
 export class QuizResultsComponent {

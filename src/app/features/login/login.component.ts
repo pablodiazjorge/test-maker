@@ -4,29 +4,25 @@ import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ProtectedDataResponse } from '../../core/data/protected-data';
 import { QuizService } from '../../core/services/quiz.service';
-import { ThemeService } from '../../core/services/theme.service';
 import { injectAuthStore } from '../../core/state/auth.store';
+import { ThemeToggleButtonComponent } from '../../shared/components/theme-toggle-button/theme-toggle-button.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
+  imports: [ThemeToggleButtonComponent],
   templateUrl: './login.component.html',
 })
 export class LoginComponent {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
   private readonly quizService = inject(QuizService);
-  private readonly themeService = inject(ThemeService);
   private readonly authStore = injectAuthStore();
 
   readonly username = signal('');
   readonly password = signal('');
   readonly isSubmitting = signal(false);
   readonly errorMessage = signal<string | null>(null);
-
-  get isDarkTheme(): boolean {
-    return this.themeService.isDark();
-  }
 
   constructor() {
     const existingSession = this.authStore.session();
@@ -57,10 +53,6 @@ export class LoginComponent {
     this.username.set('invitado');
     this.password.set('invcont123');
     this.errorMessage.set(null);
-  }
-
-  toggleTheme(): void {
-    this.themeService.toggleTheme();
   }
 
   async login(event: Event): Promise<void> {

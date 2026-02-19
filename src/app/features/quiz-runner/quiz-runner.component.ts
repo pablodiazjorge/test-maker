@@ -3,11 +3,12 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Option, Question } from '../../core/data/quiz.data';
 import { QuizService } from '../../core/services/quiz.service';
+import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 
 @Component({
   selector: 'app-quiz-runner',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, EmptyStateComponent],
   templateUrl: './quiz-runner.component.html',
 })
 export class QuizRunnerComponent {

@@ -3,29 +3,24 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { DEFAULT_QUIZ_CONFIG } from '../../core/data/quiz.data';
 import { QuizService } from '../../core/services/quiz.service';
-import { ThemeService } from '../../core/services/theme.service';
 import { injectAuthStore } from '../../core/state/auth.store';
+import { ThemeToggleButtonComponent } from '../../shared/components/theme-toggle-button/theme-toggle-button.component';
 
 @Component({
   selector: 'app-quiz-config',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, ThemeToggleButtonComponent],
   templateUrl: './quiz-config.component.html',
 })
 export class QuizConfigComponent implements OnInit {
   private readonly quizService = inject(QuizService);
   private readonly router = inject(Router);
-  private readonly themeService = inject(ThemeService);
   private readonly authStore = injectAuthStore();
   private readonly hasHoverCapability =
     typeof window !== 'undefined' && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
   get topics() {
     return this.quizService.topics;
-  }
-
-  get isDarkTheme(): boolean {
-    return this.themeService.isDark();
   }
 
   questionCount = DEFAULT_QUIZ_CONFIG.questionCount;
@@ -179,10 +174,6 @@ export class QuizConfigComponent implements OnInit {
     if (invalidKeys.includes(event.key)) {
       event.preventDefault();
     }
-  }
-
-  toggleTheme(): void {
-    this.themeService.toggleTheme();
   }
 
   async logout(): Promise<void> {
