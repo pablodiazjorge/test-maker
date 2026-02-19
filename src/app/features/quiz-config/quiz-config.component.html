@@ -125,19 +125,22 @@
     }
   </div>
 
-  <div class="sticky bottom-0 z-20 -mx-4 md:mx-0">
-    <div class="h-10 bg-gradient-to-t from-background-light dark:from-background-dark to-transparent pointer-events-none"></div>
-    <div class="bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-xl border-t border-slate-200 dark:border-white/5 px-4 md:px-0 pt-3 pb-4">
-      <button
-        type="button"
-        class="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-4 px-6 rounded-xl shadow-lg shadow-primary/25 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-        (click)="startQuiz()"
-      >
-        <span class="material-symbols-outlined text-[20px]">play_arrow</span>
-        Start Quiz
-      </button>
-    </div>
-  </div>
   </main>
+
+  <footer class="fixed bottom-0 left-0 right-0 z-30">
+    <div class="absolute -top-12 left-0 right-0 h-12 bg-gradient-to-t from-background-light dark:from-background-dark to-transparent pointer-events-none"></div>
+    <div class="bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-xl border-t border-slate-200 dark:border-white/5 px-4 md:px-0 pt-3 pb-4">
+      <div class="max-w-md md:max-w-none mx-auto w-full md:w-[70%]">
+        <button
+          type="button"
+          class="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-4 px-6 rounded-xl shadow-lg shadow-primary/25 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+          (click)="startQuiz()"
+        >
+          <span class="material-symbols-outlined text-[20px]">play_arrow</span>
+          Start Quiz
+        </button>
+      </div>
+    </div>
+  </footer>
 </div>
 
