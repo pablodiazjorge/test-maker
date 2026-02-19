@@ -7,54 +7,62 @@ interface RawEncryptedPayload {
   data: string;
 }
 
-interface HandlerRequest {
-  method?: string;
-  body?: {
-    password?: unknown;
-  };
+const NO_STORE_HEADERS = {
+  'Cache-Control': 'no-store',
+  'Content-Type': 'application/json; charset=utf-8',
+};
+
+export function GET(): Response {
+  return Response.json({ error: 'Method not allowed' }, { status: 405, headers: NO_STORE_HEADERS });
 }
 
-interface HandlerResponse {
-  setHeader: (name: string, value: string) => void;
-  status: (code: number) => {
-    json: (body: unknown) => void;
-  };
-}
-
-const APP_PASSWORD = process.env.APP_PASSWORD ?? '';
-const JSON_DECRYPT_KEY = process.env.JSON_DECRYPT_KEY ?? '';
-const GITHUB_ENCRYPTED_JSON_URL = process.env.GITHUB_ENCRYPTED_JSON_URL ?? '';
-
-export default async function handler(req: HandlerRequest, res: HandlerResponse): Promise<void> {
-  res.setHeader('Cache-Control', 'no-store');
-
-  if (req.method !== 'POST') {
-    res.status(405).json({ error: 'Method not allowed' });
-    return;
-  }
-
-  const password = typeof req.body?.password === 'string' ? req.body.password : '';
-  if (!APP_PASSWORD || password !== APP_PASSWORD) {
-    res.status(401).json({ error: 'Invalid password' });
-    return;
-  }
-
-  if (!GITHUB_ENCRYPTED_JSON_URL || !JSON_DECRYPT_KEY) {
-    res.status(500).json({ error: 'Server environment is not configured' });
-    return;
-  }
-
+export async function POST(request: Request): Promise<Response> {
   try {
-    const encryptedPayload = await fetchEncryptedPayload(GITHUB_ENCRYPTED_JSON_URL);
-    const decryptedJson = decryptPayload(encryptedPayload, JSON_DECRYPT_KEY);
-    res.status(200).json({ data: decryptedJson });
-  } catch {
-    res.status(500).json({ error: 'Failed to decrypt JSON payload' });
+    const body = await readRequestBody(request);
+    const password = typeof body.password === 'string' ? body.password : '';
+
+    const appPassword = process.env.APP_PASSWORD ?? '';
+    const decryptKey = process.env.JSON_DECRYPT_KEY ?? '';
+    const encryptedJsonUrl = process.env.GITHUB_ENCRYPTED_JSON_URL ?? '';
+    const githubToken = process.env.GITHUB_TOKEN ?? '';
+
+    if (!appPassword || password !== appPassword) {
+      return Response.json({ error: 'Invalid password' }, { status: 401, headers: NO_STORE_HEADERS });
+    }
+
+    if (!encryptedJsonUrl || !decryptKey) {
+      return Response.json(
+        { error: 'Server environment is not configured: GITHUB_ENCRYPTED_JSON_URL or JSON_DECRYPT_KEY missing' },
+        { status: 500, headers: NO_STORE_HEADERS },
+      );
+    }
+
+    const encryptedPayload = await fetchEncryptedPayload(encryptedJsonUrl, githubToken);
+    const decryptedJson = decryptPayload(encryptedPayload, decryptKey);
+
+    return Response.json({ data: decryptedJson }, { status: 200, headers: NO_STORE_HEADERS });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown server error';
+    return Response.json({ error: `Failed to decrypt JSON payload: ${message}` }, { status: 500, headers: NO_STORE_HEADERS });
   }
 }
 
-async function fetchEncryptedPayload(url: string): Promise<string> {
-  const response = await fetch(url, { headers: { Accept: 'text/plain,application/json' } });
+async function readRequestBody(request: Request): Promise<{ password?: unknown }> {
+  try {
+    const parsed = (await request.json()) as { password?: unknown };
+    return parsed ?? {};
+  } catch {
+    return {};
+  }
+}
+
+async function fetchEncryptedPayload(url: string, token: string): Promise<string> {
+  const response = await fetch(url, {
+    headers: {
+      Accept: 'text/plain,application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
   if (!response.ok) {
     throw new Error(`GitHub responded with ${response.status}`);
   }

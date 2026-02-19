@@ -44,3 +44,4 @@ Thumbs.db
 # Local protected data workflow
 public/assets/master-data.json
 .secrets/json-decrypt-key.txt
+.secrets/passwords.txt

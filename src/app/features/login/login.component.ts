@@ -69,6 +69,14 @@ export class LoginComponent {
     } catch (error) {
       if (error instanceof HttpErrorResponse && error.status === 401) {
         this.errorMessage.set('Contrasena incorrecta.');
+      } else if (error instanceof HttpErrorResponse) {
+        const backendMessage =
+          typeof error.error?.error === 'string'
+            ? error.error.error
+            : typeof error.error?.message === 'string'
+              ? error.error.message
+              : null;
+        this.errorMessage.set(backendMessage ?? 'No fue posible descifrar los datos. Intenta de nuevo.');
       } else {
         this.errorMessage.set('No fue posible descifrar los datos. Intenta de nuevo.');
       }
