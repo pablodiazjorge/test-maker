@@ -19,12 +19,13 @@ export function GET(): Response {
 export async function POST(request: Request): Promise<Response> {
   try {
     const body = await readRequestBody(request);
-    const password = typeof body.password === 'string' ? body.password : '';
+    const passwordCandidate = body['password'];
+    const password = typeof passwordCandidate === 'string' ? passwordCandidate : '';
 
-    const appPassword = process.env.APP_PASSWORD ?? '';
-    const decryptKey = process.env.JSON_DECRYPT_KEY ?? '';
-    const encryptedJsonUrl = process.env.GITHUB_ENCRYPTED_JSON_URL ?? '';
-    const githubToken = process.env.GITHUB_TOKEN ?? '';
+    const appPassword = process.env['APP_PASSWORD'] ?? '';
+    const decryptKey = process.env['JSON_DECRYPT_KEY'] ?? '';
+    const encryptedJsonUrl = process.env['GITHUB_ENCRYPTED_JSON_URL'] ?? '';
+    const githubToken = process.env['GITHUB_TOKEN'] ?? '';
 
     if (!appPassword || password !== appPassword) {
       return Response.json({ error: 'Invalid password' }, { status: 401, headers: NO_STORE_HEADERS });
@@ -97,8 +98,9 @@ function parseRawPayload(payload: string): RawEncryptedPayload {
 
   if (trimmedPayload.startsWith('{')) {
     const parsed = JSON.parse(trimmedPayload) as JsonRecord;
-    const iv = typeof parsed.iv === 'string' ? parsed.iv : '';
-    const dataCandidate = parsed.data ?? parsed.content ?? parsed.ciphertext;
+    const ivCandidate = parsed['iv'];
+    const iv = typeof ivCandidate === 'string' ? ivCandidate : '';
+    const dataCandidate = parsed['data'] ?? parsed['content'] ?? parsed['ciphertext'];
     const data = typeof dataCandidate === 'string' ? dataCandidate : '';
     if (!iv || !data) {
       throw new Error('Invalid encrypted object payload');
