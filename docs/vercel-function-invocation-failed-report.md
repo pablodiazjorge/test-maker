@@ -35,8 +35,7 @@ Environment: Vercel Production (`https://test-maker-five.vercel.app`)
 - Removed top-level Node crypto dependency load; now uses dynamic imports inside execution path.
 - Added full error wrapping and explicit JSON responses.
 - Added `api/health.ts` to validate runtime and env presence safely (without exposing secrets).
-- Added `vercel.json` forcing Node runtime for API functions:
-  - `runtime: nodejs22.x`
+- Added `vercel.json` API config with:
   - `maxDuration: 30`
 
 ## 5) Current hypothesis
@@ -89,3 +88,14 @@ All vars require redeploy after creation/change.
   https://vercel.com/docs/observability/runtime-logs
 - Vercel project config (`vercel.json`) and functions config:  
   https://vercel.com/docs/project-configuration
+
+## 10) Additional build blocker found and fixed
+- New build error observed:
+  - `Error: Function Runtimes must have a valid version, for example now-php@1.0.0`
+- Root cause:
+  - Invalid `runtime` value in `vercel.json` (`nodejs22.x`) under `functions`.
+  - For Node.js functions, Vercel already defaults to Node runtime; setting this runtime string in this context caused config validation failure.
+- Fix applied:
+  - Removed `runtime` from `vercel.json`.
+  - Kept only `maxDuration` for API functions.
+  - Added `engines.node = 22.x` in `package.json` to make Node version intent explicit.
