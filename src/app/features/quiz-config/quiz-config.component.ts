@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { DEFAULT_QUIZ_CONFIG } from '../../core/data/quiz.data';
 import { QuizService } from '../../core/services/quiz.service';
 import { ThemeService } from '../../core/services/theme.service';
+import { injectAuthStore } from '../../core/state/auth.store';
 
 @Component({
   selector: 'app-quiz-config',
@@ -15,6 +16,7 @@ export class QuizConfigComponent implements OnInit {
   private readonly quizService = inject(QuizService);
   private readonly router = inject(Router);
   private readonly themeService = inject(ThemeService);
+  private readonly authStore = injectAuthStore();
   private readonly hasHoverCapability =
     typeof window !== 'undefined' && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
@@ -181,6 +183,18 @@ export class QuizConfigComponent implements OnInit {
 
   toggleTheme(): void {
     this.themeService.toggleTheme();
+  }
+
+  async logout(): Promise<void> {
+    const currentSession = this.authStore.session();
+    this.authStore.logout();
+    if (currentSession?.userId) {
+      this.quizService.clearMasterData({ userId: currentSession.userId });
+    } else {
+      this.quizService.clearMasterData();
+    }
+    this.quizService.resetQuiz();
+    await this.router.navigate(['/']);
   }
 
   private syncQuestionCountWithSelection(): void {
