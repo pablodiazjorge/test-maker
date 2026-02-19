@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, HostListener, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Option, Question } from '../../core/data/quiz.data';
@@ -26,6 +26,11 @@ export class QuizRunnerComponent {
 
   selectAnswer(questionId: string, optionId: string): void {
     this.quizService.selectAnswer(questionId, optionId);
+  }
+
+  selectAndContinue(questionId: string, optionId: string): void {
+    this.quizService.selectAnswer(questionId, optionId);
+    this.continueQuiz();
   }
 
   goToQuestion(value: number | string): void {
@@ -82,6 +87,50 @@ export class QuizRunnerComponent {
     return isSelected
       ? 'ml-5 text-sm md:text-base font-medium md:font-semibold leading-snug break-words text-slate-900 dark:text-white'
       : 'ml-5 text-sm md:text-base font-medium leading-snug break-words text-slate-800 dark:text-white/90 group-hover:text-slate-900 dark:group-hover:text-white';
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  onKeydown(event: KeyboardEvent): void {
+    if (!this.questions().length || this.isIgnoredKeyboardTarget(event.target)) {
+      return;
+    }
+
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      this.goBack();
+      return;
+    }
+
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      this.quizService.nextQuestion();
+      return;
+    }
+
+    if (event.key !== 'Enter') {
+      return;
+    }
+
+    const current = this.currentQuestion();
+    if (!current?.userSelectedOptionId) {
+      return;
+    }
+
+    event.preventDefault();
+    this.continueQuiz();
+  }
+
+  private isIgnoredKeyboardTarget(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement)) {
+      return false;
+    }
+
+    if (target.isContentEditable) {
+      return true;
+    }
+
+    const tagName = target.tagName;
+    return tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT';
   }
 }
 

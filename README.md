@@ -12,6 +12,7 @@ Current framework baseline: Angular `21.1.x` (core `21.1.5`, CLI `21.1.4`).
 - Rich review experience with status-aware filtering (`All`, `Incorrect`, `Unanswered`) and per-topic statistics.
 - Production-oriented PDF reporting with question-by-question answer analysis and summary metrics.
 - Persistent UX state where it matters: auth session, theme mode, and user-specific master data cache with TTL.
+- Keyboard-first runtime controls for faster exam flow during active sessions.
 
 ## Core Functional Scope
 1. Secure Login and Data Provisioning
@@ -28,6 +29,10 @@ Current framework baseline: Angular `21.1.x` (core `21.1.5`, CLI `21.1.4`).
 - Question-by-question navigation with deterministic state updates.
 - Selection persistence during session runtime.
 - Progress tracking and controlled completion flow to results.
+- Advanced interaction shortcuts:
+  - Double-click an option to select it and jump to the next question.
+  - Press `Enter` to continue when the current question already has a selected answer.
+  - Use `ArrowLeft` and `ArrowRight` to move backward/forward between questions.
 
 4. Results and Export
 - Real-time scoring and breakdown: answered, correct, incorrect, unanswered, percentage.
@@ -43,7 +48,7 @@ Current framework baseline: Angular `21.1.x` (core `21.1.5`, CLI `21.1.4`).
   - Master data cache is user-scoped to avoid cross-user data leakage in shared browsers.
 
 ## Frontend Architecture
-- Framework: Angular 19 standalone components.
+- Framework: Angular 21 standalone components.
 - State model: Angular Signals (quiz state, result projections, UI state).
 - UI: Tailwind CSS (local build integration) with responsive, dark/light theming.
 - Routing:
@@ -51,6 +56,12 @@ Current framework baseline: Angular `21.1.x` (core `21.1.5`, CLI `21.1.4`).
   - `/config` Quiz setup (auth protected)
   - `/quiz` Active quiz runner (auth + active quiz protected)
   - `/results` Results and export (auth + active quiz protected)
+
+## Quiz Navigation Shortcuts
+- `Double-click` on an answer option: select and continue to the next question.
+- `Enter`: continue to the next question if one option is already selected.
+- `ArrowLeft`: previous question.
+- `ArrowRight`: next question.
 
 ## Deployment Configuration (Required)
 This project depends on server-side environment configuration. Without these variables, the app cannot provide protected data.

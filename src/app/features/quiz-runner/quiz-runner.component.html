@@ -41,7 +41,12 @@
 
         <div class="flex flex-col gap-4 w-full">
           @for (option of question.options; track option.id; let idx = $index) {
-            <button type="button" [class]="optionButtonClasses(question, option)" (click)="selectAnswer(question.id, option.id)">
+            <button
+              type="button"
+              [class]="optionButtonClasses(question, option)"
+              (click)="selectAnswer(question.id, option.id)"
+              (dblclick)="selectAndContinue(question.id, option.id)"
+            >
               <div [class]="optionBadgeClasses(question, option)">
                 @if (question.userSelectedOptionId === option.id) {
                   <span class="material-symbols-outlined text-[18px]">check</span>
