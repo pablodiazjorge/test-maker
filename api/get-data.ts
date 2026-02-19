@@ -50,13 +50,13 @@ export default async function handler(req: VercelRequestLike, res: VercelRespons
     const userConfigs = readUserConfigsFromEnv();
     if (!userConfigs.length) {
       console.error('Missing multi-user environment configuration');
-      res.status(500).json({ error: 'Configuracion del servidor incompleta' });
+      res.status(500).json({ error: 'Incomplete server configuration' });
       return;
     }
 
     const selectedUser = userConfigs.find((user) => user.userId.toLowerCase() === username.toLowerCase()) ?? null;
     if (!selectedUser || password !== selectedUser.password) {
-      res.status(401).json({ error: 'Credenciales invalidas' });
+      res.status(401).json({ error: 'Invalid credentials' });
       return;
     }
 
@@ -66,9 +66,9 @@ export default async function handler(req: VercelRequestLike, res: VercelRespons
     res.status(200).json({ userId: selectedUser.userId, data: decrypted });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Crash en API:', error);
+    console.error('API crash:', error);
     res.status(500).json({
-      error: 'Error interno en el servidor',
+      error: 'Internal server error',
       details: message,
     });
   }
@@ -129,7 +129,7 @@ async function fetchEncryptedPayload(url: string, token: string): Promise<string
   });
 
   if (!response.ok) {
-    throw new Error(`Error al descargar de GitHub: ${response.status}`);
+    throw new Error(`Error downloading from GitHub: ${response.status}`);
   }
 
   const contentType = response.headers.get('content-type') ?? '';

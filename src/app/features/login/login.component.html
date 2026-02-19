@@ -51,7 +51,7 @@
           class="w-full rounded-xl bg-primary hover:bg-primary/90 text-white font-semibold py-3 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
           [disabled]="isSubmitting() || !username().trim() || !password().trim()"
         >
-          {{ isSubmitting() ? 'Validando...' : 'Entrar' }}
+          {{ isSubmitting() ? 'Validating...' : 'Enter' }}
         </button>
       </form>
     </section>

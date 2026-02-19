@@ -60,12 +60,12 @@ export class LoginComponent {
     const trimmedUsername = this.username().trim();
     const trimmedPassword = this.password().trim();
     if (!trimmedUsername) {
-      this.errorMessage.set('El usuario es obligatorio.');
+      this.errorMessage.set('Username is required.');
       return;
     }
 
     if (!trimmedPassword) {
-      this.errorMessage.set('La contrasena es obligatoria.');
+      this.errorMessage.set('Password is required.');
       return;
     }
 
@@ -81,7 +81,7 @@ export class LoginComponent {
 
       const loaded = this.quizService.setMasterData(response.data, response.userId);
       if (!loaded) {
-        this.errorMessage.set('No se pudo cargar el banco de preguntas.');
+        this.errorMessage.set('Could not load the question bank.');
         return;
       }
 
@@ -91,7 +91,7 @@ export class LoginComponent {
       await this.router.navigate(['/config']);
     } catch (error) {
       if (error instanceof HttpErrorResponse && error.status === 401) {
-        this.errorMessage.set('Credenciales invalidas.');
+        this.errorMessage.set('Invalid credentials.');
       } else if (error instanceof HttpErrorResponse) {
         const backendMessage =
           typeof error.error?.error === 'string'
@@ -99,9 +99,9 @@ export class LoginComponent {
             : typeof error.error?.message === 'string'
               ? error.error.message
               : null;
-        this.errorMessage.set(backendMessage ?? 'No fue posible descifrar los datos. Intenta de nuevo.');
+        this.errorMessage.set(backendMessage ?? 'Unable to decrypt data. Please try again.');
       } else {
-        this.errorMessage.set('No fue posible descifrar los datos. Intenta de nuevo.');
+        this.errorMessage.set('Unable to decrypt data. Please try again.');
       }
     } finally {
       this.isSubmitting.set(false);
