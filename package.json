@@ -9,9 +9,6 @@
     "encrypt:data": "node scripts/encrypt-master-data.mjs"
   },
   "private": true,
-  "engines": {
-    "node": "22.x"
-  },
   "dependencies": {
     "@angular/animations": "^19.1.0",
     "@angular/common": "^19.1.0",
