@@ -9,18 +9,27 @@ interface RawEncryptedPayload {
   data: string;
 }
 
-const NO_STORE_HEADERS = {
-  'Cache-Control': 'no-store',
-  'Content-Type': 'application/json; charset=utf-8',
-};
+interface NodeApiRequest {
+  method?: string;
+  body?: unknown;
+}
 
-export default async function handler(request: Request): Promise<Response> {
-  if (request.method !== 'POST') {
-    return Response.json({ error: 'Method not allowed' }, { status: 405, headers: NO_STORE_HEADERS });
-  }
+interface NodeApiResponse {
+  setHeader: (name: string, value: string) => void;
+  status: (code: number) => NodeApiResponse;
+  json: (body: unknown) => void;
+}
+
+export default async function handler(req: NodeApiRequest, res: NodeApiResponse): Promise<void> {
+  res.setHeader('Cache-Control', 'no-store');
 
   try {
-    const body = await readRequestBody(request);
+    if (req.method !== 'POST') {
+      res.status(405).json({ error: 'Method not allowed' });
+      return;
+    }
+
+    const body = readRequestBody(req.body);
     const passwordCandidate = body['password'];
     const password = typeof passwordCandidate === 'string' ? passwordCandidate : '';
 
@@ -30,33 +39,46 @@ export default async function handler(request: Request): Promise<Response> {
     const githubToken = process.env['GITHUB_TOKEN'] ?? '';
 
     if (!appPassword || password !== appPassword) {
-      return Response.json({ error: 'Invalid password' }, { status: 401, headers: NO_STORE_HEADERS });
+      res.status(401).json({ error: 'Invalid password' });
+      return;
     }
 
     if (!encryptedJsonUrl || !decryptKey) {
-      return Response.json(
-        { error: 'Server environment is not configured: GITHUB_ENCRYPTED_JSON_URL or JSON_DECRYPT_KEY missing' },
-        { status: 500, headers: NO_STORE_HEADERS },
-      );
+      res
+        .status(500)
+        .json({ error: 'Server environment is not configured: GITHUB_ENCRYPTED_JSON_URL or JSON_DECRYPT_KEY missing' });
+      return;
     }
 
     const encryptedPayload = await fetchEncryptedPayload(encryptedJsonUrl, githubToken);
     const decryptedJson = decryptPayload(encryptedPayload, decryptKey);
-
-    return Response.json({ data: decryptedJson }, { status: 200, headers: NO_STORE_HEADERS });
+    res.status(200).json({ data: decryptedJson });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown server error';
-    return Response.json({ error: `Failed to decrypt JSON payload: ${message}` }, { status: 500, headers: NO_STORE_HEADERS });
+    console.error('get-data function failed:', error);
+    res.status(500).json({ error: `Failed to decrypt JSON payload: ${message}` });
   }
 }
 
-async function readRequestBody(request: Request): Promise<{ password?: unknown }> {
-  try {
-    const parsed = (await request.json()) as { password?: unknown };
-    return parsed ?? {};
-  } catch {
+function readRequestBody(rawBody: unknown): JsonRecord {
+  if (!rawBody) {
     return {};
   }
+
+  if (typeof rawBody === 'object' && !Array.isArray(rawBody)) {
+    return rawBody as JsonRecord;
+  }
+
+  if (typeof rawBody === 'string') {
+    try {
+      const parsed = JSON.parse(rawBody) as JsonRecord;
+      return parsed ?? {};
+    } catch {
+      return {};
+    }
+  }
+
+  return {};
 }
 
 async function fetchEncryptedPayload(url: string, token: string): Promise<string> {
@@ -66,9 +88,11 @@ async function fetchEncryptedPayload(url: string, token: string): Promise<string
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   });
+
   if (!response.ok) {
     throw new Error(`GitHub responded with ${response.status}`);
   }
+
   return response.text();
 }
 
