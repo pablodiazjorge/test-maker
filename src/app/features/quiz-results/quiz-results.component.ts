@@ -182,37 +182,38 @@ export class QuizResultsComponent {
     const isCorrectOption = this.isCorrectOption(question, option);
 
     if (this.isIncorrect(question) && isSelected) {
-      return 'w-5 h-5 rounded-full border-2 border-error flex items-center justify-center';
+      return 'w-5 h-5 shrink-0 rounded-full border-2 border-error flex items-center justify-center';
     }
     if (this.isIncorrect(question) && isCorrectOption) {
-      return 'w-5 h-5 rounded-full border-2 border-success flex items-center justify-center';
+      return 'w-5 h-5 shrink-0 rounded-full border-2 border-success flex items-center justify-center';
     }
     if (this.isCorrect(question) && isCorrectOption) {
-      return 'w-5 h-5 rounded-full border-2 border-success flex items-center justify-center bg-success';
+      return 'w-5 h-5 shrink-0 rounded-full border-2 border-success flex items-center justify-center bg-success';
     }
     if (this.isUnanswered(question) && isCorrectOption) {
-      return 'w-5 h-5 rounded-full border-2 border-primary/60 flex items-center justify-center';
+      return 'w-5 h-5 shrink-0 rounded-full border-2 border-primary/60 flex items-center justify-center';
     }
-    return 'w-5 h-5 rounded-full border border-slate-300 dark:border-slate-600 flex items-center justify-center';
+    return 'w-5 h-5 shrink-0 rounded-full border border-slate-300 dark:border-slate-600 flex items-center justify-center';
   }
 
   optionTextClasses(question: Question, option: Option): string {
+    const base = 'min-w-0 break-words leading-snug';
     const isSelected = this.isSelectedOption(question, option);
     const isCorrectOption = this.isCorrectOption(question, option);
 
     if (this.isIncorrect(question) && isSelected) {
-      return 'text-sm font-medium text-error';
+      return `${base} text-sm font-medium text-error`;
     }
     if ((this.isIncorrect(question) || this.isCorrect(question)) && isCorrectOption) {
-      return 'text-sm font-medium text-slate-800 dark:text-slate-100';
+      return `${base} text-sm font-medium text-slate-800 dark:text-slate-100`;
     }
     if (this.isUnanswered(question) && isCorrectOption) {
-      return 'text-sm font-medium text-slate-800 dark:text-slate-200';
+      return `${base} text-sm font-medium text-slate-800 dark:text-slate-200`;
     }
     if (this.isCorrect(question) || this.isUnanswered(question)) {
-      return 'text-sm font-medium text-slate-500 dark:text-slate-500';
+      return `${base} text-sm font-medium text-slate-500 dark:text-slate-500`;
     }
-    return 'text-sm font-medium text-slate-600 dark:text-slate-400';
+    return `${base} text-sm font-medium text-slate-600 dark:text-slate-400`;
   }
 
   optionMarker(question: Question, option: Option): string | null {

@@ -55,7 +55,7 @@
                         ></div>
                       }
 
-                      <div class="flex items-center gap-3 w-full" [class.pl-1]="isCorrectOption(question, option) || isSelectedOption(question, option)">
+                      <div class="flex items-center gap-3 w-full min-w-0" [class.pl-1]="isCorrectOption(question, option) || isSelectedOption(question, option)">
                         <div [class]="optionIndicatorClasses(question, option)">
                           @if (isIncorrect(question) && isSelectedOption(question, option)) {
                             <div class="w-2.5 h-2.5 rounded-full bg-error"></div>
