@@ -49,7 +49,7 @@ export class LoginComponent {
 
   useGuestCredentials(): void {
     this.username.set('invitado');
-    this.password.set('invitado');
+    this.password.set('invcont123');
     this.errorMessage.set(null);
   }
 
