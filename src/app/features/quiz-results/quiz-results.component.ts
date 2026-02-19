@@ -339,7 +339,7 @@ export class QuizResultsComponent {
         y += 14;
       }
 
-      pdf.save('quiz-results-report.pdf');
+      pdf.save(this.buildPdfFileName());
     } catch {
       this.exportError.set('Failed to generate PDF.');
     } finally {
@@ -360,6 +360,22 @@ export class QuizResultsComponent {
       return 'Unanswered';
     }
     return 'All';
+  }
+
+  private buildPdfFileName(): string {
+    const now = new Date();
+    const dayNames = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+    const dayName = dayNames[now.getDay()];
+    const datePart = `${this.padDatePart(now.getDate())}-${this.padDatePart(now.getMonth() + 1)}-${now.getFullYear()}`;
+    const timePart = `${this.padDatePart(now.getHours())}${this.padDatePart(now.getMinutes())}${this.padDatePart(now.getSeconds())}`;
+    const milliPart = now.getMilliseconds().toString().padStart(3, '0');
+    const randomPart = Math.random().toString(36).slice(2, 8);
+
+    return `quiz-results-${dayName}-${datePart}-${timePart}-${milliPart}-${randomPart}.pdf`;
+  }
+
+  private padDatePart(value: number): string {
+    return value.toString().padStart(2, '0');
   }
 
   private questionStatusLabel(question: Question): string {
