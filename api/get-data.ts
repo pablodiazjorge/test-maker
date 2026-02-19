@@ -89,7 +89,8 @@ function parseRequestBody(rawBody: unknown): JsonRecord {
 }
 
 async function fetchEncryptedPayload(url: string, token: string): Promise<string> {
-  const response = await fetch(url, {
+  const resolvedUrl = normalizeGitHubContentUrl(url);
+  const response = await fetch(resolvedUrl, {
     headers: {
       Accept: 'text/plain,application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -100,7 +101,14 @@ async function fetchEncryptedPayload(url: string, token: string): Promise<string
     throw new Error(`Error al descargar de GitHub: ${response.status}`);
   }
 
-  return response.text();
+  const contentType = response.headers.get('content-type') ?? '';
+  const payload = await response.text();
+
+  if (looksLikeHtmlPayload(payload, contentType)) {
+    throw new Error('GitHub URL returned HTML, not encrypted content. Use raw file URL.');
+  }
+
+  return payload;
 }
 
 function decryptPayload(payload: string, keySource: string): unknown {
@@ -122,6 +130,10 @@ function parseRawEncryptedPayload(payload: string): EncryptedPayload {
   const trimmedPayload = payload.trim();
   if (!trimmedPayload) {
     throw new Error('Encrypted payload is empty');
+  }
+
+  if (looksLikeHtmlPayload(trimmedPayload, '')) {
+    throw new Error('Encrypted payload appears to be HTML. Check GITHUB_ENCRYPTED_JSON_URL.');
   }
 
   if (trimmedPayload.startsWith('{')) {
@@ -257,4 +269,44 @@ function decodeBase64Url(value: string): Buffer | null {
 
 function isHex(value: string): boolean {
   return /^[a-fA-F0-9]+$/.test(value);
+}
+
+function normalizeGitHubContentUrl(inputUrl: string): string {
+  try {
+    const parsed = new URL(inputUrl);
+    if (parsed.hostname !== 'github.com') {
+      return inputUrl;
+    }
+
+    const pathParts = parsed.pathname.split('/').filter(Boolean);
+    if (pathParts.length >= 5 && pathParts[2] === 'blob') {
+      const owner = pathParts[0];
+      const repo = pathParts[1];
+      const branch = pathParts[3];
+      const filePath = pathParts.slice(4).join('/');
+      return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filePath}`;
+    }
+
+    if (pathParts.length >= 5 && pathParts[2] === 'raw') {
+      const owner = pathParts[0];
+      const repo = pathParts[1];
+      const branch = pathParts[3];
+      const filePath = pathParts.slice(4).join('/');
+      return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filePath}`;
+    }
+
+    return inputUrl;
+  } catch {
+    return inputUrl;
+  }
+}
+
+function looksLikeHtmlPayload(payload: string, contentType: string): boolean {
+  const normalizedContentType = contentType.toLowerCase();
+  if (normalizedContentType.includes('text/html')) {
+    return true;
+  }
+
+  const trimmed = payload.trim().toLowerCase();
+  return trimmed.startsWith('<!doctype html') || trimmed.startsWith('<html');
 }
