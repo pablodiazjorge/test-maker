@@ -25,6 +25,13 @@ interface VercelResponseLike {
   json: (body: unknown) => void;
 }
 
+interface UserDatasetConfig {
+  userId: string;
+  password: string;
+  decryptKey: string;
+  encryptedJsonUrl: string;
+}
+
 export default async function handler(req: VercelRequestLike, res: VercelResponseLike): Promise<void> {
   res.setHeader('Cache-Control', 'no-store');
 
@@ -35,28 +42,28 @@ export default async function handler(req: VercelRequestLike, res: VercelRespons
 
   try {
     const body = parseRequestBody(req.body);
+    const usernameCandidate = body['username'];
     const passwordCandidate = body['password'];
+    const username = typeof usernameCandidate === 'string' ? usernameCandidate.trim() : '';
     const password = typeof passwordCandidate === 'string' ? passwordCandidate : '';
 
-    const appPassword = process.env['APP_PASSWORD'] ?? '';
-    const decryptKey = process.env['JSON_DECRYPT_KEY'] ?? '';
-    const encryptedJsonUrl = process.env['GITHUB_ENCRYPTED_JSON_URL'] ?? '';
-    const githubToken = process.env['GITHUB_TOKEN'] ?? '';
-
-    if (!appPassword || !decryptKey || !encryptedJsonUrl) {
-      console.error('Missing environment variables');
+    const userConfigs = readUserConfigsFromEnv();
+    if (!userConfigs.length) {
+      console.error('Missing multi-user environment configuration');
       res.status(500).json({ error: 'Configuracion del servidor incompleta' });
       return;
     }
 
-    if (password !== appPassword) {
-      res.status(401).json({ error: 'Contrasena incorrecta' });
+    const selectedUser = userConfigs.find((user) => user.userId.toLowerCase() === username.toLowerCase()) ?? null;
+    if (!selectedUser || password !== selectedUser.password) {
+      res.status(401).json({ error: 'Credenciales invalidas' });
       return;
     }
 
-    const encryptedRawData = await fetchEncryptedPayload(encryptedJsonUrl, githubToken);
-    const decrypted = decryptPayload(encryptedRawData, decryptKey);
-    res.status(200).json({ data: decrypted });
+    const githubToken = process.env['GITHUB_TOKEN'] ?? '';
+    const encryptedRawData = await fetchEncryptedPayload(selectedUser.encryptedJsonUrl, githubToken);
+    const decrypted = decryptPayload(encryptedRawData, selectedUser.decryptKey);
+    res.status(200).json({ userId: selectedUser.userId, data: decrypted });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error('Crash en API:', error);
@@ -86,6 +93,30 @@ function parseRequestBody(rawBody: unknown): JsonRecord {
   }
 
   return {};
+}
+
+function readUserConfigsFromEnv(): UserDatasetConfig[] {
+  const entries: UserDatasetConfig[] = [];
+
+  for (const index of ['1', '2']) {
+    const userId = (process.env[`APP_USER_${index}_USERNAME`] ?? '').trim();
+    const password = process.env[`APP_USER_${index}_PASSWORD`] ?? '';
+    const decryptKey = process.env[`APP_USER_${index}_DECRYPT_KEY`] ?? '';
+    const encryptedJsonUrl = (process.env[`APP_USER_${index}_JSON_URL`] ?? '').trim();
+
+    if (!userId || !password || !decryptKey || !encryptedJsonUrl) {
+      continue;
+    }
+
+    entries.push({
+      userId,
+      password,
+      decryptKey,
+      encryptedJsonUrl,
+    });
+  }
+
+  return entries;
 }
 
 async function fetchEncryptedPayload(url: string, token: string): Promise<string> {

@@ -9,6 +9,18 @@
       </header>
 
       <form class="mt-6 space-y-4" (submit)="login($event)">
+        <label for="username" class="block text-sm font-medium text-slate-700 dark:text-slate-200">Usuario</label>
+        <input
+          id="username"
+          name="username"
+          type="text"
+          autocomplete="username"
+          class="w-full rounded-xl border border-slate-300 dark:border-border-dark bg-white dark:bg-background-dark px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+          [value]="username()"
+          (input)="onUsernameInput($event)"
+          [disabled]="isSubmitting()"
+        />
+
         <label for="password" class="block text-sm font-medium text-slate-700 dark:text-slate-200">Contrasena</label>
         <input
           id="password"
@@ -28,7 +40,7 @@
         <button
           type="submit"
           class="w-full rounded-xl bg-primary hover:bg-primary/90 text-white font-semibold py-3 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-          [disabled]="isSubmitting() || !password().trim()"
+          [disabled]="isSubmitting() || !username().trim() || !password().trim()"
         >
           {{ isSubmitting() ? 'Validando...' : 'Entrar' }}
         </button>

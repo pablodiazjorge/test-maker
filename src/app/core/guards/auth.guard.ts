@@ -7,8 +7,17 @@ export const authGuard: CanActivateFn = () => {
   const authStore = injectAuthStore();
   const quizService = inject(QuizService);
   const router = inject(Router);
-  const hasValidSession = authStore.isAuthenticated() && quizService.isDataLoaded();
-  if (hasValidSession) {
+
+  const session = authStore.session();
+  if (session?.userId) {
+    if (!quizService.isDataLoaded()) {
+      const restored = quizService.restoreMasterDataFromCache(session.userId);
+      if (!restored) {
+        authStore.logout();
+        quizService.clearMasterData({ userId: session.userId });
+        return router.createUrlTree(['/']);
+      }
+    }
     return true;
   }
 

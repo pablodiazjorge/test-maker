@@ -21,11 +21,12 @@ export interface QuizResults {
 
 @Injectable({ providedIn: 'root' })
 export class QuizService {
-  private static readonly MASTER_DATA_CACHE_KEY = 'test-maker.master-data.v1';
+  private static readonly MASTER_DATA_CACHE_KEY_PREFIX = 'test-maker.master-data';
 
   private topicsData: Topic[] = [];
   private allQuestions: Question[] = [];
   private questionCountByTopicId = new Map<string, number>();
+  private currentDataUserId: string | null = null;
 
   private readonly _config = signal<QuizConfig>({ ...DEFAULT_QUIZ_CONFIG });
   private readonly _questions = signal<Question[]>([]);
@@ -33,10 +34,6 @@ export class QuizService {
   private readonly _isDataLoaded = signal(false);
   private readonly _isDataLoading = signal(false);
   private readonly _dataLoadError = signal<string | null>(null);
-
-  constructor() {
-    this.restoreMasterDataFromCache();
-  }
 
   get topics(): readonly Topic[] {
     return this.topicsData;
@@ -120,35 +117,53 @@ export class QuizService {
     };
   });
 
-  setMasterData(masterTopics: MasterTopic[]): boolean {
+  setMasterData(masterTopics: MasterTopic[], userId: string): boolean {
     this._isDataLoading.set(true);
     this._dataLoadError.set(null);
+    const normalizedUserId = userId.trim();
 
     try {
       const { topics, questions } = this.normalizeMasterData(masterTopics);
       this.topicsData = topics;
       this.allQuestions = questions;
       this.questionCountByTopicId = this.buildQuestionCountByTopicId(questions);
+      this.currentDataUserId = normalizedUserId;
       const hasQuestions = questions.length > 0;
       this._isDataLoaded.set(hasQuestions);
       if (!hasQuestions) {
         this._dataLoadError.set('Master data is empty or invalid.');
-        clearCacheValue(QuizService.MASTER_DATA_CACHE_KEY);
+        clearCacheValue(this.buildMasterDataCacheKey(normalizedUserId));
       } else {
-        writeCacheValue(QuizService.MASTER_DATA_CACHE_KEY, masterTopics);
+        writeCacheValue(this.buildMasterDataCacheKey(normalizedUserId), masterTopics);
       }
       return hasQuestions;
     } catch {
-      this.clearMasterData();
+      this.clearMasterData({ userId: normalizedUserId });
       this._dataLoadError.set('Unable to load quiz data.');
-      clearCacheValue(QuizService.MASTER_DATA_CACHE_KEY);
       return false;
     } finally {
       this._isDataLoading.set(false);
     }
   }
 
-  clearMasterData(): void {
+  restoreMasterDataFromCache(userId: string): boolean {
+    const normalizedUserId = userId.trim();
+    if (!normalizedUserId) {
+      return false;
+    }
+
+    const cachedMasterData = readCacheValue<MasterTopic[]>(this.buildMasterDataCacheKey(normalizedUserId));
+    if (!cachedMasterData) {
+      return false;
+    }
+
+    return this.setMasterData(cachedMasterData, normalizedUserId);
+  }
+
+  clearMasterData(options?: { userId?: string; clearCache?: boolean }): void {
+    const normalizedUserId = options?.userId?.trim() || this.currentDataUserId || '';
+    const clearCache = options?.clearCache ?? true;
+
     this.topicsData = [];
     this.allQuestions = [];
     this.questionCountByTopicId = new Map<string, number>();
@@ -157,7 +172,11 @@ export class QuizService {
     this._isDataLoaded.set(false);
     this._isDataLoading.set(false);
     this._dataLoadError.set(null);
-    clearCacheValue(QuizService.MASTER_DATA_CACHE_KEY);
+    this.currentDataUserId = null;
+
+    if (clearCache && normalizedUserId) {
+      clearCacheValue(this.buildMasterDataCacheKey(normalizedUserId));
+    }
   }
 
   startQuiz(config: QuizConfig): void {
@@ -357,11 +376,7 @@ export class QuizService {
     return { topics, questions };
   }
 
-  private restoreMasterDataFromCache(): void {
-    const cachedMasterData = readCacheValue<MasterTopic[]>(QuizService.MASTER_DATA_CACHE_KEY);
-    if (!cachedMasterData) {
-      return;
-    }
-    this.setMasterData(cachedMasterData);
+  private buildMasterDataCacheKey(userId: string): string {
+    return `${QuizService.MASTER_DATA_CACHE_KEY_PREFIX}.${userId}.v1`;
   }
 }

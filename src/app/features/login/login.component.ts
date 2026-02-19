@@ -17,20 +17,29 @@ export class LoginComponent {
   private readonly quizService = inject(QuizService);
   private readonly authStore = injectAuthStore();
 
+  readonly username = signal('');
   readonly password = signal('');
   readonly isSubmitting = signal(false);
   readonly errorMessage = signal<string | null>(null);
 
   constructor() {
-    if (this.authStore.isAuthenticated() && this.quizService.isDataLoaded()) {
+    const existingSession = this.authStore.session();
+    if (!existingSession?.userId) {
+      return;
+    }
+
+    if (this.quizService.isDataLoaded() || this.quizService.restoreMasterDataFromCache(existingSession.userId)) {
       void this.router.navigate(['/config']);
       return;
     }
 
-    if (this.authStore.isAuthenticated() && !this.quizService.isDataLoaded()) {
-      this.authStore.logout();
-      this.quizService.clearMasterData();
-    }
+    this.authStore.logout();
+    this.quizService.clearMasterData({ userId: existingSession.userId });
+  }
+
+  onUsernameInput(event: Event): void {
+    const input = event.target as HTMLInputElement | null;
+    this.username.set(input?.value ?? '');
   }
 
   onPasswordInput(event: Event): void {
@@ -42,7 +51,13 @@ export class LoginComponent {
     event.preventDefault();
     this.errorMessage.set(null);
 
+    const trimmedUsername = this.username().trim();
     const trimmedPassword = this.password().trim();
+    if (!trimmedUsername) {
+      this.errorMessage.set('El usuario es obligatorio.');
+      return;
+    }
+
     if (!trimmedPassword) {
       this.errorMessage.set('La contrasena es obligatoria.');
       return;
@@ -53,22 +68,24 @@ export class LoginComponent {
     try {
       const response = await firstValueFrom(
         this.http.post<ProtectedDataResponse>('/api/get-data', {
+          username: trimmedUsername,
           password: trimmedPassword,
         }),
       );
 
-      const loaded = this.quizService.setMasterData(response.data);
+      const loaded = this.quizService.setMasterData(response.data, response.userId);
       if (!loaded) {
         this.errorMessage.set('No se pudo cargar el banco de preguntas.');
         return;
       }
 
-      this.authStore.login();
+      this.authStore.login(response.userId);
+      this.username.set('');
       this.password.set('');
       await this.router.navigate(['/config']);
     } catch (error) {
       if (error instanceof HttpErrorResponse && error.status === 401) {
-        this.errorMessage.set('Contrasena incorrecta.');
+        this.errorMessage.set('Credenciales invalidas.');
       } else if (error instanceof HttpErrorResponse) {
         const backendMessage =
           typeof error.error?.error === 'string'
