@@ -5,11 +5,11 @@
     <section class="rounded-2xl border border-slate-200 dark:border-border-dark bg-white dark:bg-card-dark p-6 shadow-xl">
       <header class="space-y-2">
         <h1 class="text-2xl font-bold tracking-tight">Protected Access</h1>
-        <p class="text-sm text-slate-500 dark:text-muted-foreground">Ingresa la contrasena para cargar el contenido.</p>
+        <p class="text-sm text-slate-500 dark:text-muted-foreground">Enter the password to load the content.</p>
       </header>
 
       <form class="mt-6 space-y-4" (submit)="login($event)">
-        <label for="username" class="block text-sm font-medium text-slate-700 dark:text-slate-200">Usuario</label>
+        <label for="username" class="block text-sm font-medium text-slate-700 dark:text-slate-200">User</label>
         <input
           id="username"
           name="username"
@@ -21,7 +21,7 @@
           [disabled]="isSubmitting()"
         />
 
-        <label for="password" class="block text-sm font-medium text-slate-700 dark:text-slate-200">Contrasena</label>
+        <label for="password" class="block text-sm font-medium text-slate-700 dark:text-slate-200">Password</label>
         <input
           id="password"
           name="password"
@@ -32,6 +32,15 @@
           (input)="onPasswordInput($event)"
           [disabled]="isSubmitting()"
         />
+
+        <button
+          type="button"
+          class="w-full rounded-xl border border-slate-300 dark:border-border-dark bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-100 font-semibold py-3 transition-all hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-60 disabled:cursor-not-allowed"
+          (click)="useGuestCredentials()"
+          [disabled]="isSubmitting()"
+        >
+          Guest Access
+        </button>
 
         @if (errorMessage()) {
           <p class="text-sm text-red-600 dark:text-red-400">{{ errorMessage() }}</p>

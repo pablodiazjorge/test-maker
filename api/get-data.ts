@@ -98,7 +98,7 @@ function parseRequestBody(rawBody: unknown): JsonRecord {
 function readUserConfigsFromEnv(): UserDatasetConfig[] {
   const entries: UserDatasetConfig[] = [];
 
-  for (const index of ['1', '2']) {
+  for (const index of ['1', '2', '3']) {
     const userId = (process.env[`APP_USER_${index}_USERNAME`] ?? '').trim();
     const password = process.env[`APP_USER_${index}_PASSWORD`] ?? '';
     const decryptKey = process.env[`APP_USER_${index}_DECRYPT_KEY`] ?? '';

@@ -47,6 +47,12 @@ export class LoginComponent {
     this.password.set(input?.value ?? '');
   }
 
+  useGuestCredentials(): void {
+    this.username.set('invitado');
+    this.password.set('invitado');
+    this.errorMessage.set(null);
+  }
+
   async login(event: Event): Promise<void> {
     event.preventDefault();
     this.errorMessage.set(null);
