@@ -12,11 +12,11 @@ const NO_STORE_HEADERS = {
   'Content-Type': 'application/json; charset=utf-8',
 };
 
-export function GET(): Response {
-  return Response.json({ error: 'Method not allowed' }, { status: 405, headers: NO_STORE_HEADERS });
-}
+export default async function handler(request: Request): Promise<Response> {
+  if (request.method !== 'POST') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405, headers: NO_STORE_HEADERS });
+  }
 
-export async function POST(request: Request): Promise<Response> {
   try {
     const body = await readRequestBody(request);
     const passwordCandidate = body['password'];
