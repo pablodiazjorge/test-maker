@@ -12,6 +12,8 @@ interface EncryptedPayload {
   data: string;
 }
 
+type PayloadEncoding = 'hex' | 'base64' | 'base64url' | 'utf8';
+
 interface VercelRequestLike {
   method?: string;
   body?: unknown;
@@ -111,14 +113,9 @@ function decryptPayload(payload: string, keySource: string): unknown {
 
 function parseEncryptedPayload(payload: string): { iv: Buffer; data: Buffer } {
   const normalized = parseRawEncryptedPayload(payload);
-  const iv = decodeInput(normalized['iv']);
-  const data = decodeInput(normalized['data']);
-
-  if (iv.length !== 16) {
-    throw new Error('IV must decode to 16 bytes');
-  }
-
-  return { iv, data };
+  const ivInfo = decodeIv(normalized['iv']);
+  const data = decodeCipherData(normalized['data'], ivInfo.encoding);
+  return { iv: ivInfo.value, data };
 }
 
 function parseRawEncryptedPayload(payload: string): EncryptedPayload {
@@ -177,9 +174,87 @@ function resolveKey(keySource: string): Buffer {
   throw new Error('JSON_DECRYPT_KEY must decode to 32 bytes.');
 }
 
-function decodeInput(value: string): Buffer {
-  if (/^[a-fA-F0-9]+$/.test(value) && value.length % 2 === 0) {
+function decodeIv(rawValue: string): { value: Buffer; encoding: PayloadEncoding } {
+  const value = rawValue.trim();
+
+  if (isHex(value) && value.length === 32) {
+    return { value: Buffer.from(value, 'hex'), encoding: 'hex' };
+  }
+
+  const base64Buffer = decodeBase64(value);
+  if (base64Buffer && base64Buffer.length === 16) {
+    return { value: base64Buffer, encoding: 'base64' };
+  }
+
+  const base64UrlBuffer = decodeBase64Url(value);
+  if (base64UrlBuffer && base64UrlBuffer.length === 16) {
+    return { value: base64UrlBuffer, encoding: 'base64url' };
+  }
+
+  const utf8Buffer = Buffer.from(value, 'utf8');
+  if (utf8Buffer.length === 16) {
+    return { value: utf8Buffer, encoding: 'utf8' };
+  }
+
+  throw new Error('IV must decode to 16 bytes');
+}
+
+function decodeCipherData(rawValue: string, preferredEncoding: PayloadEncoding): Buffer {
+  const value = rawValue.trim();
+  const orderedEncodings: PayloadEncoding[] = [preferredEncoding, 'base64', 'base64url', 'hex'];
+
+  for (const encoding of orderedEncodings) {
+    const decoded = decodeByEncoding(value, encoding);
+    if (decoded && decoded.length > 0) {
+      return decoded;
+    }
+  }
+
+  throw new Error('Cipher data could not be decoded');
+}
+
+function decodeByEncoding(value: string, encoding: PayloadEncoding): Buffer | null {
+  if (encoding === 'hex') {
+    if (!isHex(value) || value.length % 2 !== 0) {
+      return null;
+    }
     return Buffer.from(value, 'hex');
   }
-  return Buffer.from(value, 'base64');
+
+  if (encoding === 'base64') {
+    return decodeBase64(value);
+  }
+
+  if (encoding === 'base64url') {
+    return decodeBase64Url(value);
+  }
+
+  return Buffer.from(value, 'utf8');
+}
+
+function decodeBase64(value: string): Buffer | null {
+  const normalized = value.replace(/\s+/g, '');
+  if (!/^[A-Za-z0-9+/]*={0,2}$/.test(normalized) || normalized.length % 4 !== 0) {
+    return null;
+  }
+
+  try {
+    return Buffer.from(normalized, 'base64');
+  } catch {
+    return null;
+  }
+}
+
+function decodeBase64Url(value: string): Buffer | null {
+  const normalized = value.replace(/\s+/g, '');
+  if (!/^[A-Za-z0-9\-_]+$/.test(normalized)) {
+    return null;
+  }
+
+  const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), '=').replace(/-/g, '+').replace(/_/g, '/');
+  return decodeBase64(padded);
+}
+
+function isHex(value: string): boolean {
+  return /^[a-fA-F0-9]+$/.test(value);
 }
