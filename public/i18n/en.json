@@ -1,0 +1,90 @@
+{
+  "languages": {
+    "english": "English",
+    "spanish": "Spanish"
+  },
+  "actions": {
+    "enter": "Enter",
+    "logout": "Logout",
+    "start_quiz": "Start Quiz",
+    "continue": "Continue",
+    "finish": "Finish",
+    "finish_quiz": "Finish Quiz",
+    "back_to_setup": "Back to Setup",
+    "export_pdf": "Export PDF",
+    "exporting": "Exporting...",
+    "guest_access": "Guest Access",
+    "validating": "Validating...",
+    "switch_to_light_theme": "Switch to light theme",
+    "switch_to_dark_theme": "Switch to dark theme",
+    "switch_language_to": "Switch language to {{language}}",
+    "all": "All",
+    "incorrect": "Incorrect",
+    "unanswered": "Unanswered"
+  },
+  "login": {
+    "title": "Protected Access",
+    "subtitle": "Enter the password to load the content.",
+    "user_label": "User",
+    "password_label": "Password"
+  },
+  "config": {
+    "title": "Setup Session",
+    "subtitle": "Customize your quiz parameters below to start a new challenge.",
+    "number_of_questions_available": "Number of Questions ({{available}} available)",
+    "shuffle_questions": "Shuffle Questions",
+    "shuffle_questions_desc": "Randomize question order",
+    "shuffle_answers": "Shuffle Answers",
+    "shuffle_answers_desc": "Randomize answer order",
+    "select_topic": "Select Topic",
+    "select_topic_validation": "Select at least one topic before starting the quiz."
+  },
+  "runner": {
+    "question_counter": "Question {{current}} / {{total}}",
+    "question_label": "Question {{number}}",
+    "current_suffix": "(Current)",
+    "no_active_session_title": "No active quiz session",
+    "no_active_session_desc": "Start a new quiz from the setup dashboard."
+  },
+  "results": {
+    "title": "Results Review",
+    "score_line": "Score: {{correct}}/{{total}} ({{percent}}%)",
+    "question_label": "Question {{number}}",
+    "marker_correct": "Correct",
+    "marker_answer": "Answer",
+    "no_questions_in_filter": "No questions in this filter.",
+    "no_results_title": "No quiz results yet",
+    "no_results_desc": "Complete a quiz session to review results."
+  },
+  "status": {
+    "correct": "Correct",
+    "incorrect": "Incorrect",
+    "unanswered": "Unanswered"
+  },
+  "errors": {
+    "username_required": "Username is required.",
+    "password_required": "Password is required.",
+    "could_not_load_question_bank": "Could not load the question bank.",
+    "invalid_credentials": "Invalid credentials.",
+    "unable_to_decrypt_data": "Unable to decrypt data. Please try again.",
+    "pdf_lib_unavailable": "PDF export libraries are not available.",
+    "pdf_generate_failed": "Failed to generate PDF."
+  },
+  "pdf": {
+    "report_title": "Quiz Results Report",
+    "generated": "Generated: {{value}}",
+    "filter": "Filter: {{value}}",
+    "score": "Score: {{correct}}/{{total}} ({{percent}}%)",
+    "answered": "Answered: {{value}}",
+    "correct": "Correct: {{value}}",
+    "incorrect": "Incorrect: {{value}}",
+    "unanswered": "Unanswered: {{value}}",
+    "questions_exported": "Questions exported: {{value}}",
+    "question_title": "Question {{number}} - {{topic}} - {{status}}",
+    "options_label": "Options:",
+    "your_answer_correct": " (Your answer, correct)",
+    "your_answer": " (Your answer)",
+    "correct_suffix": " (Correct)",
+    "file_prefix": "quiz-results"
+  }
+}

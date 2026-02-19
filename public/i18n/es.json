@@ -1,0 +1,90 @@
+{
+  "languages": {
+    "english": "inglés",
+    "spanish": "español"
+  },
+  "actions": {
+    "enter": "Entrar",
+    "logout": "Cerrar sesión",
+    "start_quiz": "Iniciar test",
+    "continue": "Continuar",
+    "finish": "Finalizar",
+    "finish_quiz": "Finalizar test",
+    "back_to_setup": "Volver a configuración",
+    "export_pdf": "Exportar PDF",
+    "exporting": "Exportando...",
+    "guest_access": "Acceso invitado",
+    "validating": "Validando...",
+    "switch_to_light_theme": "Cambiar a tema claro",
+    "switch_to_dark_theme": "Cambiar a tema oscuro",
+    "switch_language_to": "Cambiar idioma a {{language}}",
+    "all": "Todas",
+    "incorrect": "Incorrectas",
+    "unanswered": "Sin responder"
+  },
+  "login": {
+    "title": "Acceso protegido",
+    "subtitle": "Introduce la contraseña para cargar el contenido.",
+    "user_label": "Usuario",
+    "password_label": "Contraseña"
+  },
+  "config": {
+    "title": "Configurar sesión",
+    "subtitle": "Personaliza los parámetros del test para comenzar un nuevo reto.",
+    "number_of_questions_available": "Número de preguntas ({{available}} disponibles)",
+    "shuffle_questions": "Mezclar preguntas",
+    "shuffle_questions_desc": "Aleatorizar el orden de las preguntas",
+    "shuffle_answers": "Mezclar respuestas",
+    "shuffle_answers_desc": "Aleatorizar el orden de las respuestas",
+    "select_topic": "Seleccionar tema",
+    "select_topic_validation": "Selecciona al menos un tema antes de iniciar el test."
+  },
+  "runner": {
+    "question_counter": "Pregunta {{current}} / {{total}}",
+    "question_label": "Pregunta {{number}}",
+    "current_suffix": "(Actual)",
+    "no_active_session_title": "No hay una sesión activa",
+    "no_active_session_desc": "Inicia un nuevo test desde la pantalla de configuración."
+  },
+  "results": {
+    "title": "Revisión de resultados",
+    "score_line": "Puntuación: {{correct}}/{{total}} ({{percent}}%)",
+    "question_label": "Pregunta {{number}}",
+    "marker_correct": "Correcta",
+    "marker_answer": "Respuesta",
+    "no_questions_in_filter": "No hay preguntas en este filtro.",
+    "no_results_title": "Aún no hay resultados",
+    "no_results_desc": "Completa una sesión de test para revisar los resultados."
+  },
+  "status": {
+    "correct": "Correcta",
+    "incorrect": "Incorrecta",
+    "unanswered": "Sin responder"
+  },
+  "errors": {
+    "username_required": "El usuario es obligatorio.",
+    "password_required": "La contraseña es obligatoria.",
+    "could_not_load_question_bank": "No se pudo cargar el banco de preguntas.",
+    "invalid_credentials": "Credenciales inválidas.",
+    "unable_to_decrypt_data": "No fue posible descifrar los datos. Inténtalo de nuevo.",
+    "pdf_lib_unavailable": "Las librerías de exportación PDF no están disponibles.",
+    "pdf_generate_failed": "No se pudo generar el PDF."
+  },
+  "pdf": {
+    "report_title": "Informe de resultados del test",
+    "generated": "Generado: {{value}}",
+    "filter": "Filtro: {{value}}",
+    "score": "Puntuación: {{correct}}/{{total}} ({{percent}}%)",
+    "answered": "Respondidas: {{value}}",
+    "correct": "Correctas: {{value}}",
+    "incorrect": "Incorrectas: {{value}}",
+    "unanswered": "Sin responder: {{value}}",
+    "questions_exported": "Preguntas exportadas: {{value}}",
+    "question_title": "Pregunta {{number}} - {{topic}} - {{status}}",
+    "options_label": "Opciones:",
+    "your_answer_correct": " (Tu respuesta, correcta)",
+    "your_answer": " (Tu respuesta)",
+    "correct_suffix": " (Correcta)",
+    "file_prefix": "resultados-test"
+  }
+}

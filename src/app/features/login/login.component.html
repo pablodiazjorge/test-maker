@@ -6,16 +6,19 @@
       <header class="space-y-3">
         <div class="flex items-start justify-between gap-3">
           <div class="space-y-2">
-            <h1 class="text-2xl font-bold tracking-tight">Protected Access</h1>
-            <p class="text-sm text-slate-500 dark:text-muted-foreground">Enter the password to load the content.</p>
+            <h1 class="text-2xl font-bold tracking-tight">{{ 'login.title' | translate }}</h1>
+            <p class="text-sm text-slate-500 dark:text-muted-foreground">{{ 'login.subtitle' | translate }}</p>
           </div>
 
-          <app-theme-toggle-button variant="page" />
+          <div class="flex items-center gap-2">
+            <app-language-toggle-button variant="page" />
+            <app-theme-toggle-button variant="page" />
+          </div>
         </div>
       </header>
 
       <form class="mt-6 space-y-4" (submit)="login($event)">
-        <label for="username" class="block text-sm font-medium text-slate-700 dark:text-slate-200">User</label>
+        <label for="username" class="block text-sm font-medium text-slate-700 dark:text-slate-200">{{ 'login.user_label' | translate }}</label>
         <input
           id="username"
           name="username"
@@ -27,7 +30,7 @@
           [disabled]="isSubmitting()"
         />
 
-        <label for="password" class="block text-sm font-medium text-slate-700 dark:text-slate-200">Password</label>
+        <label for="password" class="block text-sm font-medium text-slate-700 dark:text-slate-200">{{ 'login.password_label' | translate }}</label>
         <input
           id="password"
           name="password"
@@ -45,7 +48,7 @@
           (click)="useGuestCredentials()"
           [disabled]="isSubmitting()"
         >
-          Guest Access
+          {{ 'actions.guest_access' | translate }}
         </button>
 
         @if (errorMessage()) {
@@ -57,7 +60,7 @@
           class="w-full rounded-xl bg-primary hover:bg-primary/90 text-white font-semibold py-3 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
           [disabled]="isSubmitting() || !username().trim() || !password().trim()"
         >
-          {{ isSubmitting() ? 'Validating...' : 'Enter' }}
+          {{ isSubmitting() ? ('actions.validating' | translate) : ('actions.enter' | translate) }}
         </button>
       </form>
     </section>

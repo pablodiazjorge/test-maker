@@ -1,4 +1,5 @@
 import { Component, inject, Input } from '@angular/core';
+import { I18nService } from '../../../core/services/i18n.service';
 import { ThemeService } from '../../../core/services/theme.service';
 
 type ThemeToggleVariant = 'card' | 'page';
@@ -15,18 +16,17 @@ type ThemeToggleVariant = 'card' | 'page';
   `,
 })
 export class ThemeToggleButtonComponent {
+  private readonly i18n = inject(I18nService);
   private readonly themeService = inject(ThemeService);
 
   @Input() variant: ThemeToggleVariant = 'card';
-  @Input() switchToLightAriaLabel = 'Switch to light theme';
-  @Input() switchToDarkAriaLabel = 'Switch to dark theme';
 
   get isDarkTheme(): boolean {
     return this.themeService.isDark();
   }
 
   get ariaLabel(): string {
-    return this.isDarkTheme ? this.switchToLightAriaLabel : this.switchToDarkAriaLabel;
+    return this.isDarkTheme ? this.i18n.t('actions.switch_to_light_theme') : this.i18n.t('actions.switch_to_dark_theme');
   }
 
   get buttonClasses(): string {

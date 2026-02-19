@@ -1,20 +1,24 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { TranslateModule } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 import { ProtectedDataResponse } from '../../core/data/protected-data';
+import { I18nService } from '../../core/services/i18n.service';
 import { QuizService } from '../../core/services/quiz.service';
 import { injectAuthStore } from '../../core/state/auth.store';
+import { LanguageToggleButtonComponent } from '../../shared/components/language-toggle-button/language-toggle-button.component';
 import { ThemeToggleButtonComponent } from '../../shared/components/theme-toggle-button/theme-toggle-button.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ThemeToggleButtonComponent],
+  imports: [ThemeToggleButtonComponent, LanguageToggleButtonComponent, TranslateModule],
   templateUrl: './login.component.html',
 })
 export class LoginComponent {
   private readonly http = inject(HttpClient);
+  private readonly i18n = inject(I18nService);
   private readonly router = inject(Router);
   private readonly quizService = inject(QuizService);
   private readonly authStore = injectAuthStore();
@@ -62,12 +66,12 @@ export class LoginComponent {
     const trimmedUsername = this.username().trim();
     const trimmedPassword = this.password().trim();
     if (!trimmedUsername) {
-      this.errorMessage.set('Username is required.');
+      this.errorMessage.set(this.i18n.t('errors.username_required'));
       return;
     }
 
     if (!trimmedPassword) {
-      this.errorMessage.set('Password is required.');
+      this.errorMessage.set(this.i18n.t('errors.password_required'));
       return;
     }
 
@@ -83,7 +87,7 @@ export class LoginComponent {
 
       const loaded = this.quizService.setMasterData(response.data, response.userId);
       if (!loaded) {
-        this.errorMessage.set('Could not load the question bank.');
+        this.errorMessage.set(this.i18n.t('errors.could_not_load_question_bank'));
         return;
       }
 
@@ -93,17 +97,9 @@ export class LoginComponent {
       await this.router.navigate(['/config']);
     } catch (error) {
       if (error instanceof HttpErrorResponse && error.status === 401) {
-        this.errorMessage.set('Invalid credentials.');
-      } else if (error instanceof HttpErrorResponse) {
-        const backendMessage =
-          typeof error.error?.error === 'string'
-            ? error.error.error
-            : typeof error.error?.message === 'string'
-              ? error.error.message
-              : null;
-        this.errorMessage.set(backendMessage ?? 'Unable to decrypt data. Please try again.');
+        this.errorMessage.set(this.i18n.t('errors.invalid_credentials'));
       } else {
-        this.errorMessage.set('Unable to decrypt data. Please try again.');
+        this.errorMessage.set(this.i18n.t('errors.unable_to_decrypt_data'));
       }
     } finally {
       this.isSubmitting.set(false);

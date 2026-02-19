@@ -1,8 +1,11 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { TranslateModule } from '@ngx-translate/core';
 import { Option, Question } from '../../core/data/quiz.data';
+import { I18nService } from '../../core/services/i18n.service';
 import { QuizService } from '../../core/services/quiz.service';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
+import { LanguageToggleButtonComponent } from '../../shared/components/language-toggle-button/language-toggle-button.component';
 
 type ResultsFilter = 'all' | 'incorrect' | 'unanswered';
 
@@ -41,10 +44,11 @@ declare global {
 @Component({
   selector: 'app-quiz-results',
   standalone: true,
-  imports: [EmptyStateComponent],
+  imports: [EmptyStateComponent, LanguageToggleButtonComponent, TranslateModule],
   templateUrl: './quiz-results.component.html',
 })
 export class QuizResultsComponent {
+  private readonly i18n = inject(I18nService);
   private readonly quizService = inject(QuizService);
   private readonly router = inject(Router);
 
@@ -226,10 +230,10 @@ export class QuizResultsComponent {
       return 'close';
     }
     if ((this.isIncorrect(question) || this.isCorrect(question)) && isCorrectOption) {
-      return 'Correct';
+      return 'correct';
     }
     if (this.isUnanswered(question) && isCorrectOption) {
-      return 'Answer';
+      return 'answer';
     }
     return null;
   }
@@ -237,7 +241,7 @@ export class QuizResultsComponent {
   async exportPdf(): Promise<void> {
     const JsPDF = window.jspdf?.jsPDF;
     if (!JsPDF) {
-      this.exportError.set('PDF export libraries are not available.');
+      this.exportError.set(this.i18n.t('errors.pdf_lib_unavailable'));
       return;
     }
 
@@ -257,15 +261,15 @@ export class QuizResultsComponent {
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(20);
       pdf.setTextColor(15, 23, 42);
-      pdf.text('Quiz Results Report', margin, y);
+      pdf.text(this.i18n.t('pdf.report_title'), margin, y);
       y += 24;
 
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(10);
       pdf.setTextColor(100, 116, 139);
-      pdf.text(`Generated: ${new Date().toLocaleString()}`, margin, y);
+      pdf.text(this.i18n.t('pdf.generated', { value: new Date().toLocaleString() }), margin, y);
       y += 14;
-      pdf.text(`Filter: ${this.exportFilterLabel()}`, margin, y);
+      pdf.text(this.i18n.t('pdf.filter', { value: this.exportFilterLabel() }), margin, y);
       y += 20;
 
       const summary = this.results();
@@ -281,22 +285,30 @@ export class QuizResultsComponent {
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(12);
       pdf.setTextColor(15, 23, 42);
-      pdf.text(`Score: ${summary.correct}/${summary.total} (${summary.scorePercent}%)`, margin + 12, y + 20);
+      pdf.text(
+        this.i18n.t('pdf.score', { correct: summary.correct, total: summary.total, percent: summary.scorePercent }),
+        margin + 12,
+        y + 20,
+      );
 
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(11);
       pdf.setTextColor(51, 65, 85);
-      pdf.text(`Answered: ${summary.answered}`, margin + 12, y + 40);
-      pdf.text(`Correct: ${summary.correct}`, margin + 126, y + 40);
-      pdf.text(`Incorrect: ${summary.incorrect}`, margin + 220, y + 40);
-      pdf.text(`Unanswered: ${summary.unanswered}`, margin + 330, y + 40);
-      pdf.text(`Questions exported: ${exportedQuestions.length}`, margin + 12, y + 58);
+      pdf.text(this.i18n.t('pdf.answered', { value: summary.answered }), margin + 12, y + 40);
+      pdf.text(this.i18n.t('pdf.correct', { value: summary.correct }), margin + 126, y + 40);
+      pdf.text(this.i18n.t('pdf.incorrect', { value: summary.incorrect }), margin + 220, y + 40);
+      pdf.text(this.i18n.t('pdf.unanswered', { value: summary.unanswered }), margin + 330, y + 40);
+      pdf.text(this.i18n.t('pdf.questions_exported', { value: exportedQuestions.length }), margin + 12, y + 58);
       y += summaryHeight + 18;
 
       for (const question of exportedQuestions) {
         const statusLabel = this.questionStatusLabel(question);
         const statusColor = this.questionStatusColor(question);
-        const questionTitle = `Question ${this.questionNumber(question.id)} - ${this.topicName(question.topicId)} - ${statusLabel}`;
+        const questionTitle = this.i18n.t('pdf.question_title', {
+          number: this.questionNumber(question.id),
+          topic: this.topicName(question.topicId),
+          status: statusLabel,
+        });
         const questionLines = pdf.splitTextToSize(question.text, contentWidth);
         const optionGroups = question.options.map((option, index) => {
           const optionText = `${this.optionLetter(index)}) ${option.text}${this.optionPdfSuffix(question, option)}`;
@@ -327,7 +339,7 @@ export class QuizResultsComponent {
 
         pdf.setFontSize(10);
         pdf.setTextColor(100, 116, 139);
-        pdf.text('Options:', margin, y);
+        pdf.text(this.i18n.t('pdf.options_label'), margin, y);
         y += lineHeight;
 
         for (const group of optionGroups) {
@@ -344,7 +356,7 @@ export class QuizResultsComponent {
 
       pdf.save(this.buildPdfFileName());
     } catch {
-      this.exportError.set('Failed to generate PDF.');
+      this.exportError.set(this.i18n.t('errors.pdf_generate_failed'));
     } finally {
       this.isExporting.set(false);
     }
@@ -357,24 +369,24 @@ export class QuizResultsComponent {
 
   private exportFilterLabel(): string {
     if (this.filter() === 'incorrect') {
-      return 'Incorrect';
+      return this.i18n.t('actions.incorrect');
     }
     if (this.filter() === 'unanswered') {
-      return 'Unanswered';
+      return this.i18n.t('actions.unanswered');
     }
-    return 'All';
+    return this.i18n.t('actions.all');
   }
 
   private buildPdfFileName(): string {
     const now = new Date();
-    const dayNames = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
-    const dayName = dayNames[now.getDay()];
+    const locale = this.i18n.language() === 'es' ? 'es-ES' : 'en-US';
+    const dayName = this.normalizeFileNamePart(new Intl.DateTimeFormat(locale, { weekday: 'long' }).format(now));
     const datePart = `${this.padDatePart(now.getDate())}-${this.padDatePart(now.getMonth() + 1)}-${now.getFullYear()}`;
     const timePart = `${this.padDatePart(now.getHours())}${this.padDatePart(now.getMinutes())}${this.padDatePart(now.getSeconds())}`;
     const milliPart = now.getMilliseconds().toString().padStart(3, '0');
     const randomPart = Math.random().toString(36).slice(2, 8);
 
-    return `quiz-results-${dayName}-${datePart}-${timePart}-${milliPart}-${randomPart}.pdf`;
+    return `${this.i18n.t('pdf.file_prefix')}-${dayName}-${datePart}-${timePart}-${milliPart}-${randomPart}.pdf`;
   }
 
   private padDatePart(value: number): string {
@@ -383,12 +395,12 @@ export class QuizResultsComponent {
 
   private questionStatusLabel(question: Question): string {
     if (this.isCorrect(question)) {
-      return 'Correct';
+      return this.i18n.t('status.correct');
     }
     if (this.isIncorrect(question)) {
-      return 'Incorrect';
+      return this.i18n.t('status.incorrect');
     }
-    return 'Unanswered';
+    return this.i18n.t('status.unanswered');
   }
 
   private questionStatusColor(question: Question): [number, number, number] {
@@ -416,15 +428,23 @@ export class QuizResultsComponent {
     const isSelected = this.isSelectedOption(question, option);
     const isCorrect = this.isCorrectOption(question, option);
     if (isSelected && isCorrect) {
-      return ' (Your answer, correct)';
+      return this.i18n.t('pdf.your_answer_correct');
     }
     if (isSelected) {
-      return ' (Your answer)';
+      return this.i18n.t('pdf.your_answer');
     }
     if (isCorrect) {
-      return ' (Correct)';
+      return this.i18n.t('pdf.correct_suffix');
     }
     return '';
+  }
+
+  private normalizeFileNamePart(input: string): string {
+    return input
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9_-]/g, '-')
+      .toLowerCase();
   }
 
   private optionPdfColor(question: Question, option: Option): [number, number, number] {

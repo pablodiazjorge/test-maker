@@ -9,15 +9,18 @@
     <div class="relative z-10 flex flex-col h-full min-h-screen max-w-md md:max-w-none mx-auto w-full md:w-[70%] pt-6">
       <div class="flex items-center justify-between px-6 pt-2 pb-2">
         <div class="text-xs font-medium text-muted-foreground tracking-wider uppercase">
-          Question {{ currentIndex() + 1 }} / {{ totalQuestions() }}
+          {{ 'runner.question_counter' | translate: { current: currentIndex() + 1, total: totalQuestions() } }}
         </div>
-        <button
-          type="button"
-          class="text-xs font-medium text-slate-600 dark:text-white hover:text-primary transition-colors px-4 py-1.5 rounded-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 active:scale-95"
-          (click)="finishQuiz()"
-        >
-          Finish
-        </button>
+        <div class="flex items-center gap-2">
+          <app-language-toggle-button />
+          <button
+            type="button"
+            class="text-xs font-medium text-slate-600 dark:text-white hover:text-primary transition-colors px-4 py-1.5 rounded-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 active:scale-95"
+            (click)="finishQuiz()"
+          >
+            {{ 'actions.finish' | translate }}
+          </button>
+        </div>
       </div>
 
       <div class="px-6 mb-2">
@@ -28,7 +31,9 @@
             (ngModelChange)="goToQuestion($event)"
           >
             @for (item of questions(); track item.id; let i = $index) {
-              <option [value]="i + 1">Question {{ i + 1 }} @if (i === currentIndex()) { (Current) }</option>
+              <option [value]="i + 1">
+                {{ 'runner.question_label' | translate: { number: i + 1 } }}{{ i === currentIndex() ? ' ' + ('runner.current_suffix' | translate) : '' }}
+              </option>
             }
           </select>
         </div>
@@ -78,7 +83,7 @@
               class="flex-1 flex items-center justify-center gap-2 h-14 rounded-2xl bg-primary text-white font-bold text-lg shadow-[0_0_20px_rgba(19,127,236,0.3)] transition-transform active:scale-[0.98] hover:bg-primary/90"
               (click)="continueQuiz()"
             >
-              <span>{{ isLastQuestion() ? 'Finish Quiz' : 'Continue' }}</span>
+              <span>{{ isLastQuestion() ? ('actions.finish_quiz' | translate) : ('actions.continue' | translate) }}</span>
               <span class="material-symbols-outlined text-[22px]">{{ isLastQuestion() ? 'check' : 'arrow_forward' }}</span>
             </button>
           </div>
@@ -87,9 +92,9 @@
     </div>
   } @else {
     <app-empty-state
-      title="No active quiz session"
-      description="Start a new quiz from the setup dashboard."
-      actionLabel="Back to Setup"
+      [title]="'runner.no_active_session_title' | translate"
+      [description]="'runner.no_active_session_desc' | translate"
+      [actionLabel]="'actions.back_to_setup' | translate"
       (action)="restart()"
     />
   }

@@ -6,22 +6,25 @@
       <div class="w-full md:w-[70%] md:mx-auto">
         <div class="sticky top-0 z-10 bg-background-light/95 dark:bg-results-background-dark/95 backdrop-blur-sm pt-8 pb-3 px-4 md:px-0 border-b border-transparent dark:border-surface-highlight/50">
           <div class="flex items-center justify-between mb-2">
-            <h1 class="text-3xl font-bold tracking-tight dark:text-white">Results Review</h1>
-            <button
-              type="button"
-              class="h-10 px-4 rounded-full border border-slate-300 dark:border-surface-highlight bg-white/90 dark:bg-surface-dark text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-white dark:hover:bg-surface-highlight transition-colors"
-              (click)="backToSetup()"
-            >
-              Back to Setup
-            </button>
+            <h1 class="text-3xl font-bold tracking-tight dark:text-white">{{ 'results.title' | translate }}</h1>
+            <div class="flex items-center gap-2">
+              <app-language-toggle-button />
+              <button
+                type="button"
+                class="h-10 px-4 rounded-full border border-slate-300 dark:border-surface-highlight bg-white/90 dark:bg-surface-dark text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-white dark:hover:bg-surface-highlight transition-colors"
+                (click)="backToSetup()"
+              >
+                {{ 'actions.back_to_setup' | translate }}
+              </button>
+            </div>
           </div>
           <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">
-            Score: {{ results().correct }}/{{ results().total }} ({{ results().scorePercent }}%)
+            {{ 'results.score_line' | translate: { correct: results().correct, total: results().total, percent: results().scorePercent } }}
           </p>
           <div class="flex p-1 bg-slate-200 dark:bg-surface-highlight rounded-lg">
-            <button type="button" [class]="filterButtonClasses('all')" (click)="setFilter('all')">All</button>
-            <button type="button" [class]="filterButtonClasses('incorrect')" (click)="setFilter('incorrect')">Incorrect</button>
-            <button type="button" [class]="filterButtonClasses('unanswered')" (click)="setFilter('unanswered')">Unanswered</button>
+            <button type="button" [class]="filterButtonClasses('all')" (click)="setFilter('all')">{{ 'actions.all' | translate }}</button>
+            <button type="button" [class]="filterButtonClasses('incorrect')" (click)="setFilter('incorrect')">{{ 'actions.incorrect' | translate }}</button>
+            <button type="button" [class]="filterButtonClasses('unanswered')" (click)="setFilter('unanswered')">{{ 'actions.unanswered' | translate }}</button>
           </div>
         </div>
 
@@ -34,7 +37,7 @@
                     <span [class]="questionStatusIconClasses(question)">
                       <span class="material-symbols-outlined text-sm font-bold">{{ questionStatusIcon(question) }}</span>
                     </span>
-                    <h3 [class]="questionTitleClasses(question)">Question {{ questionNumber(question.id) }}</h3>
+                    <h3 [class]="questionTitleClasses(question)">{{ 'results.question_label' | translate: { number: questionNumber(question.id) } }}</h3>
                   </div>
                   <span class="text-xs font-medium text-slate-400">{{ topicName(question.topicId) }}</span>
                 </div>
@@ -70,10 +73,10 @@
 
                       @if (optionMarker(question, option) === 'close') {
                         <span class="material-symbols-outlined text-error text-xl">close</span>
-                      } @else if (optionMarker(question, option) === 'Correct') {
-                        <span class="text-xs font-bold text-success uppercase tracking-wider">Correct</span>
-                      } @else if (optionMarker(question, option) === 'Answer') {
-                        <span class="text-xs font-medium text-primary uppercase tracking-wider">Answer</span>
+                      } @else if (optionMarker(question, option) === 'correct') {
+                        <span class="text-xs font-bold text-success uppercase tracking-wider">{{ 'results.marker_correct' | translate }}</span>
+                      } @else if (optionMarker(question, option) === 'answer') {
+                        <span class="text-xs font-medium text-primary uppercase tracking-wider">{{ 'results.marker_answer' | translate }}</span>
                       }
                     </div>
                   }
@@ -82,7 +85,7 @@
             </div>
           } @empty {
             <div class="rounded-xl border border-slate-200 dark:border-surface-highlight bg-white dark:bg-surface-dark p-6 text-center">
-              <p class="text-sm text-slate-500 dark:text-slate-400">No questions in this filter.</p>
+              <p class="text-sm text-slate-500 dark:text-slate-400">{{ 'results.no_questions_in_filter' | translate }}</p>
             </div>
           }
           <div class="h-20"></div>
@@ -98,7 +101,7 @@
         (click)="exportPdf()"
       >
         <span class="material-symbols-outlined text-xl">picture_as_pdf</span>
-        <span class="text-sm font-semibold tracking-wide">{{ isExporting() ? 'Exporting...' : 'Export PDF' }}</span>
+        <span class="text-sm font-semibold tracking-wide">{{ isExporting() ? ('actions.exporting' | translate) : ('actions.export_pdf' | translate) }}</span>
       </button>
 
       @if (exportError()) {
@@ -107,9 +110,9 @@
     </div>
   } @else {
     <app-empty-state
-      title="No quiz results yet"
-      description="Complete a quiz session to review results."
-      actionLabel="Back to Setup"
+      [title]="'results.no_results_title' | translate"
+      [description]="'results.no_results_desc' | translate"
+      [actionLabel]="'actions.back_to_setup' | translate"
       titleClass="text-2xl font-bold text-white"
       (action)="backToSetup()"
     />

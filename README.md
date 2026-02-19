@@ -13,6 +13,7 @@ Current framework baseline: Angular `21.1.x` (core `21.1.5`, CLI `21.1.4`).
 - Production-oriented PDF reporting with question-by-question answer analysis and summary metrics.
 - Persistent UX state where it matters: auth session, theme mode, and user-specific master data cache with TTL.
 - Keyboard-first runtime controls for faster exam flow during active sessions.
+- Runtime internationalization (i18n) with English/Spanish switching, English default, and persisted language preference.
 
 ## Core Functional Scope
 1. Secure Login and Data Provisioning
@@ -38,6 +39,7 @@ Current framework baseline: Angular `21.1.x` (core `21.1.5`, CLI `21.1.4`).
 - Real-time scoring and breakdown: answered, correct, incorrect, unanswered, percentage.
 - Topic-level analytics computed from actual session responses.
 - PDF export includes generation timestamp, filter context, question status, and answer markers.
+- Export labels and report metadata are localized according to the active UI language.
 
 ## Security and Data Handling Model
 - Encrypted content workflow:
@@ -50,7 +52,11 @@ Current framework baseline: Angular `21.1.x` (core `21.1.5`, CLI `21.1.4`).
 ## Frontend Architecture
 - Framework: Angular 21 standalone components.
 - State model: Angular Signals (quiz state, result projections, UI state).
-- UI: Tailwind CSS (local build integration) with responsive, dark/light theming.
+- UI: Tailwind CSS (local build integration), responsive dark/light theming, and EN/ES language toggle controls.
+- Internationalization:
+  - Runtime translation layer powered by `@ngx-translate/core`.
+  - Translation dictionaries in `public/i18n/en.json` and `public/i18n/es.json`.
+  - Language is initialized globally and persisted client-side (default: English).
 - Routing:
   - `/` Login
   - `/config` Quiz setup (auth protected)
@@ -82,9 +88,11 @@ Optional:
 ## Project Layout
 - `api/get-data.ts` - Secure credential validation and encrypted dataset delivery.
 - `src/app/core/services/quiz.service.ts` - Question-bank normalization, quiz lifecycle, scoring, topic analytics.
+- `src/app/core/services/i18n.service.ts` - Application language initialization, persistence, and translation helpers.
 - `src/app/core/state/auth.store.ts` - Session state and persistence.
 - `src/app/core/state/browser-cache.ts` - Expiring cache primitives.
 - `src/app/features/login` - Access gate and protected-data bootstrap.
 - `src/app/features/quiz-config` - Session setup UX.
 - `src/app/features/quiz-runner` - Runtime exam interaction.
 - `src/app/features/quiz-results` - Review, filtering, and PDF reporting.
+- `src/app/shared/components/language-toggle-button` - Reusable EN/ES language switch control.
