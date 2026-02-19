@@ -1,36 +1,79 @@
 # TestMaker
 
-Aplicacion de quizzes con Angular 19 (standalone), Signals y Tailwind CSS (CDN).
+TestMaker is a secure, session-aware exam platform built with Angular 21 (standalone + Signals) and designed for serious question-bank workflows, not just basic quiz demos.
 
-## Requisitos
-- Node.js 20+
-- npm 10+
+Current framework baseline: Angular `21.1.x` (core `21.1.5`, CLI `21.1.4`).
 
-## Scripts
-- `npm start`: entorno local en `http://localhost:4200/`
-- `npm run build`: build de produccion en `dist/test-maker`
-- `npm run watch`: build en modo watch
+## What Makes This Project Different
+- Multi-user protected access backed by a serverless API (`/api/get-data`).
+- Per-user encrypted question banks fetched remotely and decrypted on demand.
+- Strict route protection (`authGuard`, `activeQuizGuard`) across login, setup, run, and results flows.
+- Configurable exam sessions with topic scoping, dynamic question limits, and optional shuffling for questions and answers.
+- Rich review experience with status-aware filtering (`All`, `Incorrect`, `Unanswered`) and per-topic statistics.
+- Production-oriented PDF reporting with question-by-question answer analysis and summary metrics.
+- Persistent UX state where it matters: auth session, theme mode, and user-specific master data cache with TTL.
 
-## Flujo de la app
-1. Carga del banco de preguntas desde `public/assets/master-data.json` (APP_INITIALIZER).
-2. Setup de sesion en `/`: temas, numero de preguntas y shuffles.
-3. Ejecucion en `/quiz`: navegacion y respuesta por pregunta.
-4. Revision en `/results`: filtros y exportacion PDF con jsPDF.
+## Core Functional Scope
+1. Secure Login and Data Provisioning
+- Users authenticate via `POST /api/get-data`.
+- API validates credentials from environment variables and resolves a user-specific encrypted dataset URL.
+- Payload is decrypted server-side (AES-256-CBC) and returned as normalized quiz master data.
 
-## Rutas
-- `/` Setup Session
-- `/quiz` Quiz Runner (protegida por `activeQuizGuard`)
-- `/results` Results Review (protegida por `activeQuizGuard`)
+2. Session Configuration
+- Users choose topics, question count, and shuffle behavior.
+- Question count is constrained by the currently selected topic pool.
+- Validation prevents invalid launches (for example, no topics selected).
 
-## Estructura
-- `src/app/core/data`: interfaces y contratos
-- `src/app/core/services`: estado global (`QuizService`) y tema (`ThemeService`)
-- `src/app/core/guards`: guards de navegacion
-- `src/app/features/quiz-config`: configuracion del quiz
-- `src/app/features/quiz-runner`: ejecucion del quiz
-- `src/app/features/quiz-results`: revision y exportacion PDF
-- `public/assets/master-data.json`: datos maestros
-- `src/app/initial-design`: HTML estaticos de referencia de diseno
+3. Quiz Execution
+- Question-by-question navigation with deterministic state updates.
+- Selection persistence during session runtime.
+- Progress tracking and controlled completion flow to results.
 
-## Nota preproduccion
-- Tailwind se sirve por CDN en `src/index.html`; para produccion final se recomienda integrarlo en pipeline de build.
+4. Results and Export
+- Real-time scoring and breakdown: answered, correct, incorrect, unanswered, percentage.
+- Topic-level analytics computed from actual session responses.
+- PDF export includes generation timestamp, filter context, question status, and answer markers.
+
+## Security and Data Handling Model
+- Encrypted content workflow:
+  - `scripts/encrypt-master-data.mjs` encrypts JSON payloads with AES-256-CBC.
+  - `/api/get-data.ts` fetches encrypted payloads (supports GitHub URL normalization), decodes IV/ciphertext, decrypts, and returns structured data.
+- Local browser cache strategy:
+  - Auth and master data are cached with expiration (default TTL: 3 days).
+  - Master data cache is user-scoped to avoid cross-user data leakage in shared browsers.
+
+## Frontend Architecture
+- Framework: Angular 19 standalone components.
+- State model: Angular Signals (quiz state, result projections, UI state).
+- UI: Tailwind CSS (local build integration) with responsive, dark/light theming.
+- Routing:
+  - `/` Login
+  - `/config` Quiz setup (auth protected)
+  - `/quiz` Active quiz runner (auth + active quiz protected)
+  - `/results` Results and export (auth + active quiz protected)
+
+## Deployment Configuration (Required)
+This project depends on server-side environment configuration. Without these variables, the app cannot provide protected data.
+
+Required variable groups (up to 3 users):
+- `APP_USER_1_USERNAME`, `APP_USER_1_PASSWORD`, `APP_USER_1_DECRYPT_KEY`, `APP_USER_1_JSON_URL`
+- `APP_USER_2_USERNAME`, `APP_USER_2_PASSWORD`, `APP_USER_2_DECRYPT_KEY`, `APP_USER_2_JSON_URL`
+- `APP_USER_3_USERNAME`, `APP_USER_3_PASSWORD`, `APP_USER_3_DECRYPT_KEY`, `APP_USER_3_JSON_URL`
+
+Optional:
+- `GITHUB_TOKEN` (recommended for private repositories or stricter API limits)
+
+## Useful Scripts
+- `npm run build` - Production build output.
+- `npm run watch` - Development build in watch mode.
+- `npm run encrypt:data` - Encrypt a master question bank for protected delivery.
+
+## Project Layout
+- `api/get-data.ts` - Secure credential validation and encrypted dataset delivery.
+- `src/app/core/services/quiz.service.ts` - Question-bank normalization, quiz lifecycle, scoring, topic analytics.
+- `src/app/core/state/auth.store.ts` - Session state and persistence.
+- `src/app/core/state/browser-cache.ts` - Expiring cache primitives.
+- `src/app/features/login` - Access gate and protected-data bootstrap.
+- `src/app/features/quiz-config` - Session setup UX.
+- `src/app/features/quiz-runner` - Runtime exam interaction.
+- `src/app/features/quiz-results` - Review, filtering, and PDF reporting.
