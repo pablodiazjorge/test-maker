@@ -303,21 +303,26 @@ export class QuizResultsComponent {
       for (const question of exportedQuestions) {
         const statusLabel = this.questionStatusLabel(question);
         const statusColor = this.questionStatusColor(question);
-        const questionTitle = this.i18n.t('pdf.question_title', {
+        const questionTitle = `${this.i18n.t('runner.question_label', {
           number: this.questionNumber(question.id),
-          topic: this.topicName(question.topicId),
-          status: statusLabel,
-        });
+        })} - ${this.topicName(question.topicId)}`;
         const questionLines = pdf.splitTextToSize(question.text, contentWidth);
         const optionGroups = question.options.map((option, index) => {
-          const optionText = `${this.optionLetter(index)}) ${option.text}${this.optionPdfSuffix(question, option)}`;
+          const optionText = `${this.optionLetter(index)}) ${option.text}`;
+          const markerText = this.optionPdfSuffix(question, option);
           return {
             option,
             lines: pdf.splitTextToSize(optionText, contentWidth - 12),
+            markerText,
           };
         });
-        const optionsHeight = lineHeight + optionGroups.reduce((sum, group) => sum + group.lines.length * lineHeight + 3, 0);
-        const estimatedHeight = 22 + questionLines.length * lineHeight + 8 + optionsHeight + 14;
+        const optionsHeight =
+          lineHeight +
+          optionGroups.reduce(
+            (sum, group) => sum + group.lines.length * lineHeight + (group.markerText ? lineHeight : 0) + 4,
+            0,
+          );
+        const estimatedHeight = 34 + questionLines.length * lineHeight + 8 + optionsHeight + 14;
 
         if (y + estimatedHeight > pageHeight - margin) {
           pdf.addPage();
@@ -326,9 +331,15 @@ export class QuizResultsComponent {
 
         pdf.setFont('helvetica', 'bold');
         pdf.setFontSize(12);
-        pdf.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
+        pdf.setTextColor(15, 23, 42);
         pdf.text(questionTitle, margin, y);
         y += 18;
+
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(10);
+        pdf.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
+        pdf.text(statusLabel, margin, y);
+        y += 14;
 
         pdf.setFont('helvetica', 'normal');
         pdf.setFontSize(11);
@@ -342,10 +353,20 @@ export class QuizResultsComponent {
         y += lineHeight;
 
         for (const group of optionGroups) {
-          const optionColor = this.optionPdfColor(question, group.option);
-          pdf.setTextColor(optionColor[0], optionColor[1], optionColor[2]);
+          pdf.setTextColor(51, 65, 85);
           pdf.text(group.lines, margin + 12, y);
-          y += group.lines.length * lineHeight + 3;
+          y += group.lines.length * lineHeight + 2;
+
+          if (group.markerText) {
+            const markerColor = this.optionPdfColor(question, group.option);
+            pdf.setFont('helvetica', 'bold');
+            pdf.setTextColor(markerColor[0], markerColor[1], markerColor[2]);
+            pdf.text(group.markerText.trim(), margin + 20, y);
+            y += lineHeight;
+            pdf.setFont('helvetica', 'normal');
+          }
+
+          y += 2;
         }
 
         pdf.setDrawColor(226, 232, 240);
