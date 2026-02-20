@@ -6,6 +6,9 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "test": "ng test --watch=false",
+    "test:watch": "ng test",
+    "test:coverage": "ng test --watch=false --coverage",
     "watch": "ng build --watch --configuration development",
     "encrypt:data": "node scripts/encrypt-master-data.mjs"
   },
@@ -30,7 +33,10 @@
     "@angular/compiler-cli": "^21.1.5",
     "@tailwindcss/container-queries": "^0.1.1",
     "@tailwindcss/forms": "^0.5.11",
+    "@vitest/coverage-v8": "^4.0.18",
+    "jsdom": "^28.1.0",
     "tailwindcss": "^3.4.19",
-    "typescript": "~5.9.3"
+    "typescript": "~5.9.3",
+    "vitest": "^4.0.18"
   }
 }

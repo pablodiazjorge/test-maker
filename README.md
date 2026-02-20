@@ -83,7 +83,24 @@ Optional:
 ## Useful Scripts
 - `npm run build` - Production build output.
 - `npm run watch` - Development build in watch mode.
+- `npm run test` - Run the unit test suite once (Vitest via Angular unit-test builder).
+- `npm run test:watch` - Run unit tests in watch mode.
+- `npm run test:coverage` - Run tests with coverage report and enforced thresholds.
 - `npm run encrypt:data` - Encrypt a master question bank for protected delivery.
+
+## Testing and Coverage
+- Unit testing stack: Angular `@angular/build:unit-test` with Vitest.
+- Coverage scope: application TypeScript files under `src/app/**/*.ts` (excluding specs and non-runtime type-only files).
+- Enforced quality gate:
+  - Statements: `>= 80%`
+  - Branches: `>= 70%`
+  - Functions: `>= 80%`
+  - Lines: `>= 80%`
+- Current suite focus:
+  - Core logic (`QuizService`, auth store, browser cache, guards)
+  - UX state services (theme and runtime i18n)
+  - Feature behavior (login, setup, runner keyboard shortcuts, results/export)
+  - Shared reusable UI controls
 
 ## Project Layout
 - `api/get-data.ts` - Secure credential validation and encrypted dataset delivery.
