@@ -114,10 +114,10 @@ export class QuizConfigComponent implements OnInit {
 
   topicIndicatorClasses(topicId: string): string {
     if (this.isTopicSelected(topicId)) {
-      return 'w-5 h-5 rounded-full border-2 border-primary flex items-center justify-center bg-primary/10';
+      return 'w-5 h-5 shrink-0 aspect-square rounded-full border-2 border-primary flex items-center justify-center bg-primary/10';
     }
     const hoverClasses = this.hasHoverCapability ? 'group-hover:border-primary group-hover:bg-primary/10' : '';
-    return `w-5 h-5 rounded-full border-2 border-slate-300 dark:border-slate-600 flex items-center justify-center ${hoverClasses}`.trim();
+    return `w-5 h-5 shrink-0 aspect-square rounded-full border-2 border-slate-300 dark:border-slate-600 flex items-center justify-center ${hoverClasses}`.trim();
   }
 
   onQuestionCountChange(value: number | string): void {
