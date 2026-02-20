@@ -23,6 +23,7 @@ interface JsPdfInstance {
   rect(x: number, y: number, width: number, height: number, style?: 'S' | 'F' | 'FD' | 'DF'): void;
   text(text: string | string[], x: number, y: number): void;
   splitTextToSize(text: string, maxWidth: number): string[];
+  getTextWidth(text: string): number;
   line(x1: number, y1: number, x2: number, y2: number): void;
   addPage(): void;
   save(fileName: string): void;
@@ -303,9 +304,9 @@ export class QuizResultsComponent {
       for (const question of exportedQuestions) {
         const statusLabel = this.questionStatusLabel(question);
         const statusColor = this.questionStatusColor(question);
-        const questionTitle = `${this.i18n.t('runner.question_label', {
+        const questionTitlePrefix = `${this.i18n.t('runner.question_label', {
           number: this.questionNumber(question.id),
-        })} - ${this.topicName(question.topicId)}`;
+        })} - ${this.topicName(question.topicId)} -`;
         const questionLines = pdf.splitTextToSize(question.text, contentWidth);
         const optionGroups = question.options.map((option, index) => {
           const optionText = `${this.optionLetter(index)}) ${option.text}`;
@@ -332,14 +333,10 @@ export class QuizResultsComponent {
         pdf.setFont('helvetica', 'bold');
         pdf.setFontSize(12);
         pdf.setTextColor(15, 23, 42);
-        pdf.text(questionTitle, margin, y);
-        y += 18;
-
-        pdf.setFont('helvetica', 'bold');
-        pdf.setFontSize(10);
+        pdf.text(questionTitlePrefix, margin, y);
         pdf.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
-        pdf.text(statusLabel, margin, y);
-        y += 14;
+        pdf.text(statusLabel, margin + pdf.getTextWidth(`${questionTitlePrefix} `), y);
+        y += 18;
 
         pdf.setFont('helvetica', 'normal');
         pdf.setFontSize(11);
@@ -355,18 +352,29 @@ export class QuizResultsComponent {
         for (const group of optionGroups) {
           pdf.setTextColor(51, 65, 85);
           pdf.text(group.lines, margin + 12, y);
-          y += group.lines.length * lineHeight + 2;
+          let extraMarkerLineHeight = 0;
 
           if (group.markerText) {
             const markerColor = this.optionPdfColor(question, group.option);
+            const lastLine = group.lines[group.lines.length - 1] ?? '';
+            const markerLabel = group.markerText.trim();
+            const markerInlineX = margin + 12 + pdf.getTextWidth(`${lastLine} `);
+            const markerWidth = pdf.getTextWidth(markerLabel);
+            const markerFitsSameLine = markerInlineX + markerWidth <= pageWidth - margin;
+            const markerY = y + (group.lines.length - 1) * lineHeight;
+
             pdf.setFont('helvetica', 'bold');
             pdf.setTextColor(markerColor[0], markerColor[1], markerColor[2]);
-            pdf.text(group.markerText.trim(), margin + 20, y);
-            y += lineHeight;
+            if (markerFitsSameLine) {
+              pdf.text(markerLabel, markerInlineX, markerY);
+            } else {
+              pdf.text(markerLabel, margin + 20, markerY + lineHeight);
+              extraMarkerLineHeight = lineHeight;
+            }
             pdf.setFont('helvetica', 'normal');
           }
 
-          y += 2;
+          y += group.lines.length * lineHeight + extraMarkerLineHeight + 3;
         }
 
         pdf.setDrawColor(226, 232, 240);
