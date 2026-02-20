@@ -5,7 +5,6 @@ import { Option, Question } from '../../core/data/quiz.data';
 import { I18nService } from '../../core/services/i18n.service';
 import { QuizService } from '../../core/services/quiz.service';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
-import { LanguageToggleButtonComponent } from '../../shared/components/language-toggle-button/language-toggle-button.component';
 
 type ResultsFilter = 'all' | 'incorrect' | 'unanswered';
 
@@ -44,7 +43,7 @@ declare global {
 @Component({
   selector: 'app-quiz-results',
   standalone: true,
-  imports: [EmptyStateComponent, LanguageToggleButtonComponent, TranslateModule],
+  imports: [EmptyStateComponent, TranslateModule],
   templateUrl: './quiz-results.component.html',
 })
 export class QuizResultsComponent {

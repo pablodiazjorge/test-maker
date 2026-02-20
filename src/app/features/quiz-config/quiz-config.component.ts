@@ -5,13 +5,12 @@ import { TranslateModule } from '@ngx-translate/core';
 import { DEFAULT_QUIZ_CONFIG } from '../../core/data/quiz.data';
 import { QuizService } from '../../core/services/quiz.service';
 import { injectAuthStore } from '../../core/state/auth.store';
-import { LanguageToggleButtonComponent } from '../../shared/components/language-toggle-button/language-toggle-button.component';
 import { ThemeToggleButtonComponent } from '../../shared/components/theme-toggle-button/theme-toggle-button.component';
 
 @Component({
   selector: 'app-quiz-config',
   standalone: true,
-  imports: [FormsModule, ThemeToggleButtonComponent, LanguageToggleButtonComponent, TranslateModule],
+  imports: [FormsModule, ThemeToggleButtonComponent, TranslateModule],
   templateUrl: './quiz-config.component.html',
 })
 export class QuizConfigComponent implements OnInit {

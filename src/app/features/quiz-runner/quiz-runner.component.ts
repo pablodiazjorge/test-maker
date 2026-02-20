@@ -5,12 +5,11 @@ import { TranslateModule } from '@ngx-translate/core';
 import { Option, Question } from '../../core/data/quiz.data';
 import { QuizService } from '../../core/services/quiz.service';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
-import { LanguageToggleButtonComponent } from '../../shared/components/language-toggle-button/language-toggle-button.component';
 
 @Component({
   selector: 'app-quiz-runner',
   standalone: true,
-  imports: [FormsModule, EmptyStateComponent, LanguageToggleButtonComponent, TranslateModule],
+  imports: [FormsModule, EmptyStateComponent, TranslateModule],
   templateUrl: './quiz-runner.component.html',
 })
 export class QuizRunnerComponent {
