@@ -4,7 +4,7 @@
   @if (questions().length) {
     <main class="flex-1 overflow-y-auto pb-24 relative">
       <div class="w-full md:w-[70%] md:mx-auto">
-        <div class="sticky top-0 z-10 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm pt-8 pb-3 px-4 md:px-0 border-b border-transparent dark:border-surface-highlight/50">
+        <div class="sticky top-0 z-10 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm pt-8 pb-3 px-4 md:px-0 border-b border-transparent dark:border-border-dark/50">
           <div class="mb-2">
             <h1 class="text-3xl font-bold tracking-tight dark:text-white">{{ 'results.title' | translate }}</h1>
           </div>
@@ -14,13 +14,13 @@
             </p>
             <button
               type="button"
-              class="h-10 px-4 rounded-full border border-slate-300 dark:border-surface-highlight bg-white/90 dark:bg-surface-dark text-slate-700 dark:text-slate-200 text-xs font-medium hover:bg-white dark:hover:bg-surface-highlight transition-colors whitespace-nowrap"
+              class="h-10 px-4 rounded-full border border-slate-300 dark:border-border-dark bg-white/90 dark:bg-card-dark text-slate-700 dark:text-slate-200 text-xs font-medium hover:bg-white dark:hover:bg-card-dark/80 transition-colors whitespace-nowrap"
               (click)="backToSetup()"
             >
               {{ 'actions.back_to_setup' | translate }}
             </button>
           </div>
-          <div class="flex p-1 bg-slate-200 dark:bg-surface-highlight rounded-lg">
+          <div class="flex p-1 bg-slate-200 dark:bg-border-dark rounded-lg">
             <button type="button" [class]="filterButtonClasses('all')" (click)="setFilter('all')">{{ 'actions.all' | translate }}</button>
             <button type="button" [class]="filterButtonClasses('incorrect')" (click)="setFilter('incorrect')">{{ 'actions.incorrect' | translate }}</button>
             <button type="button" [class]="filterButtonClasses('unanswered')" (click)="setFilter('unanswered')">{{ 'actions.unanswered' | translate }}</button>
@@ -83,7 +83,7 @@
               </div>
             </div>
           } @empty {
-            <div class="rounded-xl border border-slate-200 dark:border-surface-highlight bg-white dark:bg-surface-dark p-6 text-center">
+            <div class="rounded-xl border border-slate-200 dark:border-border-dark bg-white dark:bg-card-dark p-6 text-center">
               <p class="text-sm text-slate-500 dark:text-slate-400">{{ 'results.no_questions_in_filter' | translate }}</p>
             </div>
           }
@@ -104,7 +104,7 @@
       </button>
 
       @if (exportError()) {
-        <p class="text-xs text-red-500 bg-white/90 dark:bg-surface-dark px-2 py-1 rounded-md">{{ exportError() }}</p>
+        <p class="text-xs text-red-500 bg-white/90 dark:bg-card-dark px-2 py-1 rounded-md">{{ exportError() }}</p>
       }
     </div>
   } @else {

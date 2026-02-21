@@ -85,7 +85,7 @@ export class QuizResultsComponent {
 
   filterButtonClasses(filter: ResultsFilter): string {
     if (this.filter() === filter) {
-      return 'flex-1 py-1.5 px-3 text-sm font-medium rounded-md bg-white dark:bg-primary shadow-sm text-slate-900 dark:text-white transition-all';
+      return 'flex-1 py-1.5 px-3 text-sm font-medium rounded-md bg-white dark:bg-card-dark shadow-sm text-slate-900 dark:text-white border border-slate-200 dark:border-border-dark transition-all';
     }
     return 'flex-1 py-1.5 px-3 text-sm font-medium rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-all';
   }
@@ -120,9 +120,9 @@ export class QuizResultsComponent {
 
   questionCardClasses(question: Question): string {
     if (this.isIncorrect(question)) {
-      return 'bg-white dark:bg-surface-dark rounded-xl border border-error/30 dark:border-error/40 overflow-hidden shadow-sm';
+      return 'bg-white dark:bg-card-dark rounded-xl border border-error/30 dark:border-error/40 overflow-hidden shadow-sm';
     }
-    return 'bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-surface-highlight overflow-hidden shadow-sm';
+    return 'bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark overflow-hidden shadow-sm';
   }
 
   questionStatusIcon(question: Question): string {
@@ -167,20 +167,20 @@ export class QuizResultsComponent {
       if (isCorrectOption) {
         return `${base} border-success bg-success/5 relative overflow-hidden justify-between`;
       }
-      return `${base} border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors`;
+      return `${base} border-slate-200 dark:border-border-dark hover:bg-slate-50 dark:hover:bg-card-dark/80 transition-colors`;
     }
 
     if (this.isCorrect(question)) {
       if (isCorrectOption) {
         return `${base} border-success bg-success/5 relative overflow-hidden justify-between`;
       }
-      return `${base} border-slate-200 dark:border-slate-700 opacity-60`;
+      return `${base} border-slate-200 dark:border-border-dark opacity-60`;
     }
 
     if (isCorrectOption) {
-      return `${base} border-primary/50 bg-slate-50 dark:bg-surface-highlight border-dashed justify-between`;
+      return `${base} border-primary/50 bg-slate-50 dark:bg-card-dark/50 border-dashed justify-between`;
     }
-    return `${base} border-slate-200 dark:border-slate-700 opacity-60`;
+    return `${base} border-slate-200 dark:border-border-dark opacity-60`;
   }
 
   optionIndicatorClasses(question: Question, option: Option): string {
