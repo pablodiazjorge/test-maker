@@ -183,6 +183,7 @@ describe('QuizResultsComponent', () => {
       rect: vi.fn(),
       text: vi.fn(),
       splitTextToSize: vi.fn((text: string) => [text]),
+      getTextWidth: vi.fn(() => 50),
       line: vi.fn(),
       addPage: vi.fn(),
       save: vi.fn(),

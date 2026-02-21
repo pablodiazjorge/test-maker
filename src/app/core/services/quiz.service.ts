@@ -188,7 +188,14 @@ export class QuizService {
 
     const validTopicIds = new Set(this.topicsData.map((topic) => topic.id));
     const selectedTopicIds = [...new Set(config.selectedTopicIds)].filter((topicId) => validTopicIds.has(topicId));
-    const questionPool = this.getQuestionPoolByTopics(selectedTopicIds);
+
+    const totalAvailableQuestions = this.getQuestionCountForTopics(selectedTopicIds);
+    const requestedQuestionCount = Math.min(Math.max(1, Math.floor(config.questionCount)), totalAvailableQuestions);
+
+    const questionPool =
+      requestedQuestionCount < totalAvailableQuestions
+        ? this.getDistributedQuestionPool(selectedTopicIds, requestedQuestionCount)
+        : this.getQuestionPoolByTopics(selectedTopicIds);
 
     if (!questionPool.length) {
       this._config.set({
@@ -202,18 +209,16 @@ export class QuizService {
       return;
     }
 
-    const questionCount = Math.min(Math.max(1, Math.floor(config.questionCount)), questionPool.length);
-
     const sanitizedConfig: QuizConfig = {
-      questionCount,
+      questionCount: requestedQuestionCount,
       shuffleQuestions: config.shuffleQuestions,
       shuffleAnswers: config.shuffleAnswers,
       selectedTopicIds,
     };
 
     const questionsForSession = sanitizedConfig.shuffleQuestions
-      ? this.shuffleArray(questionPool).slice(0, sanitizedConfig.questionCount)
-      : questionPool.slice(0, sanitizedConfig.questionCount);
+      ? this.shuffleArray(questionPool)
+      : questionPool;
 
     const withRandomizedOptions = questionsForSession.map((question) => ({
       ...question,
@@ -292,6 +297,37 @@ export class QuizService {
 
   private topicNameById(topicId: string): string {
     return this.topics.find((topic) => topic.id === topicId)?.name ?? topicId;
+  }
+
+  private getDistributedQuestionPool(topicIds: readonly string[], questionCount: number): Question[] {
+    const questions: Question[] = [];
+    const topicsWithQuestions = topicIds
+      .map((topicId) => ({
+        topicId,
+        questions: this.allQuestions.filter((q) => q.topicId === topicId),
+      }))
+      .filter((t) => t.questions.length > 0);
+
+    if (!topicsWithQuestions.length) {
+      return [];
+    }
+
+    let questionsPerTopic = Math.floor(questionCount / topicsWithQuestions.length);
+    let remainder = questionCount % topicsWithQuestions.length;
+
+    for (const topic of topicsWithQuestions) {
+      let count = questionsPerTopic + (remainder > 0 ? 1 : 0);
+      remainder--;
+
+      const shuffledQuestions = this.shuffleArray(topic.questions);
+      questions.push(...shuffledQuestions.slice(0, count));
+    }
+
+    return questions.map((question) => ({
+      ...question,
+      options: question.options.map((option) => ({ ...option })),
+      userSelectedOptionId: null,
+    }));
   }
 
   private getQuestionPoolByTopics(topicIds: readonly string[]): Question[] {

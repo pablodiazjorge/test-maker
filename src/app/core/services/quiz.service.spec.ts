@@ -100,6 +100,8 @@ describe('QuizService', () => {
   });
 
   it('computes results with topic breakdown', () => {
+    // With default fixture (2 topics, 2 questions each), we ask for 3 questions.
+    // The new logic will give 2 from one topic, 1 from another. Total is 3.
     service.setMasterData(createMasterTopicsFixture(), 'alice');
     service.startQuiz({
       questionCount: 3,
@@ -109,8 +111,12 @@ describe('QuizService', () => {
     });
 
     const [q1, q2] = service.questions();
+    const incorrectOptionForQ2 = q2.options.find((o) => o.id !== q2.correctOptionId);
+    expect(incorrectOptionForQ2).toBeDefined();
+
+    // Answer one correctly, one incorrectly
     service.selectAnswer(q1.id, q1.correctOptionId);
-    service.selectAnswer(q2.id, 'q-2-b');
+    service.selectAnswer(q2.id, incorrectOptionForQ2!.id);
 
     const results = service.results();
     expect(results.total).toBe(3);
@@ -118,25 +124,19 @@ describe('QuizService', () => {
     expect(results.correct).toBe(1);
     expect(results.incorrect).toBe(1);
     expect(results.unanswered).toBe(1);
-    expect(results.scorePercent).toBe(33);
-    expect(results.byTopic).toEqual([
-      {
-        topicId: 'topic-1',
-        topicName: 'HTML',
-        total: 2,
-        correct: 1,
-        incorrect: 1,
-        unanswered: 0,
-      },
-      {
-        topicId: 'topic-2',
-        topicName: 'CSS',
-        total: 1,
-        correct: 0,
-        incorrect: 0,
-        unanswered: 1,
-      },
-    ]);
+    expect(results.scorePercent).toBe(33); // 1 correct out of 3 total
+
+    // Verify topic breakdown adds up
+    const totalByTopic = results.byTopic.reduce((sum, t) => sum + t.total, 0);
+    const correctByTopic = results.byTopic.reduce((sum, t) => sum + t.correct, 0);
+    const incorrectByTopic = results.byTopic.reduce((sum, t) => sum + t.incorrect, 0);
+    const unansweredByTopic = results.byTopic.reduce((sum, t) => sum + t.unanswered, 0);
+
+    expect(totalByTopic).toBe(results.total);
+    expect(correctByTopic).toBe(results.correct);
+    expect(incorrectByTopic).toBe(results.incorrect);
+    expect(unansweredByTopic).toBe(results.unanswered);
+    expect(results.byTopic).toHaveLength(2);
   });
 
   it('restores cached master data for an existing user', () => {
@@ -150,5 +150,34 @@ describe('QuizService', () => {
     expect(restored).toBe(true);
     expect(service.isDataLoaded()).toBe(true);
     expect(service.topics).toHaveLength(2);
+  });
+
+  it('selects a random, evenly distributed subset of questions from multiple topics', () => {
+    const masterData = createMasterTopicsFixture({ topicCount: 3, questionsPerTopic: 10 });
+    service.setMasterData(masterData, 'alice');
+
+    service.startQuiz({
+      questionCount: 5,
+      shuffleQuestions: true,
+      shuffleAnswers: true,
+      selectedTopicIds: ['topic-1', 'topic-2', 'topic-3'],
+    });
+
+    const questions = service.questions();
+    expect(questions).toHaveLength(5);
+
+    const counts: Record<string, number> = {
+      'topic-1': 0,
+      'topic-2': 0,
+      'topic-3': 0,
+    };
+
+    for (const q of questions) {
+      counts[q.topicId]++;
+    }
+
+    // 5 questions from 3 topics = 2, 2, 1
+    const distribution = Object.values(counts).sort((a, b) => b - a);
+    expect(distribution).toEqual([2, 2, 1]);
   });
 });
