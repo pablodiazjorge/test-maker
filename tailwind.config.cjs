@@ -9,7 +9,6 @@ module.exports = {
         'primary-foreground': '#ffffff',
         'background-light': '#f6f7f8',
         'background-dark': '#101922',
-        'results-background-dark': '#09090b',
         'card-dark': '#192633',
         'border-dark': '#233648',
         'muted-foreground': '#92adc9',
