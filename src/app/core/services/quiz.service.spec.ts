@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { QuizService } from './quiz.service';
-import { createMasterTopicsFixture } from '../../../testing/quiz-fixtures';
+import { createMasterTopicsFixture } from './quiz.service.fixtures';
 
 describe('QuizService', () => {
   let service: QuizService;
@@ -100,8 +100,6 @@ describe('QuizService', () => {
   });
 
   it('computes results with topic breakdown', () => {
-    // With default fixture (2 topics, 2 questions each), we ask for 3 questions.
-    // The new logic will give 2 from one topic, 1 from another. Total is 3.
     service.setMasterData(createMasterTopicsFixture(), 'alice');
     service.startQuiz({
       questionCount: 3,
@@ -114,7 +112,6 @@ describe('QuizService', () => {
     const incorrectOptionForQ2 = q2.options.find((o) => o.id !== q2.correctOptionId);
     expect(incorrectOptionForQ2).toBeDefined();
 
-    // Answer one correctly, one incorrectly
     service.selectAnswer(q1.id, q1.correctOptionId);
     service.selectAnswer(q2.id, incorrectOptionForQ2!.id);
 
@@ -126,7 +123,6 @@ describe('QuizService', () => {
     expect(results.unanswered).toBe(1);
     expect(results.scorePercent).toBe(33); // 1 correct out of 3 total
 
-    // Verify topic breakdown adds up
     const totalByTopic = results.byTopic.reduce((sum, t) => sum + t.total, 0);
     const correctByTopic = results.byTopic.reduce((sum, t) => sum + t.correct, 0);
     const incorrectByTopic = results.byTopic.reduce((sum, t) => sum + t.incorrect, 0);
@@ -176,7 +172,6 @@ describe('QuizService', () => {
       counts[q.topicId]++;
     }
 
-    // 5 questions from 3 topics = 2, 2, 1
     const distribution = Object.values(counts).sort((a, b) => b - a);
     expect(distribution).toEqual([2, 2, 1]);
   });

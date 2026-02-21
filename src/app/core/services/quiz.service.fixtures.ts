@@ -1,4 +1,4 @@
-import { MasterTopic } from '../app/core/data/quiz.data';
+import { MasterTopic } from '../data/quiz.data';
 
 export function createMasterTopicsFixture(options?: { topicCount?: number; questionsPerTopic?: number }): MasterTopic[] {
   const topicCount = options?.topicCount ?? 2;
