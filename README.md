@@ -31,6 +31,7 @@ Current framework baseline: Angular `21.1.x` (core `21.1.5`, CLI `21.1.4`).
 - Selection persistence during session runtime.
 - Progress tracking and controlled completion flow to results.
 - Advanced interaction shortcuts:
+  - Press `1`, `2`, `3`, `4` to quickly select options A, B, C, D.
   - Double-click an option to select it and jump to the next question.
   - Press `Enter` to continue when the current question already has a selected answer.
   - Use `ArrowLeft` and `ArrowRight` to move backward/forward between questions.
@@ -64,6 +65,7 @@ Current framework baseline: Angular `21.1.x` (core `21.1.5`, CLI `21.1.4`).
   - `/results` Results and export (auth + active quiz protected)
 
 ## Quiz Navigation Shortcuts
+- `1`, `2`, `3`, `4`: select option A, B, C, D respectively.
 - `Double-click` on an answer option: select and continue to the next question.
 - `Enter`: continue to the next question if one option is already selected.
 - `ArrowLeft`: previous question.
