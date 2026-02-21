@@ -407,14 +407,26 @@ export class QuizResultsComponent {
 
   private buildPdfFileName(): string {
     const now = new Date();
-    const locale = this.i18n.language() === 'es' ? 'es-ES' : 'en-US';
-    const dayName = this.normalizeFileNamePart(new Intl.DateTimeFormat(locale, { weekday: 'long' }).format(now));
-    const datePart = `${this.padDatePart(now.getDate())}-${this.padDatePart(now.getMonth() + 1)}-${now.getFullYear()}`;
-    const timePart = `${this.padDatePart(now.getHours())}${this.padDatePart(now.getMinutes())}${this.padDatePart(now.getSeconds())}`;
-    const milliPart = now.getMilliseconds().toString().padStart(3, '0');
-    const randomPart = Math.random().toString(36).slice(2, 8);
+    const day = this.padDatePart(now.getDate());
+    const month = this.padDatePart(now.getMonth() + 1);
+    const yearShort = now.getFullYear().toString().slice(-2);
+    const hours = this.padDatePart(now.getHours());
+    const minutes = this.padDatePart(now.getMinutes());
 
-    return `${this.i18n.t('pdf.file_prefix')}-${dayName}-${datePart}-${timePart}-${milliPart}-${randomPart}.pdf`;
+    const filterSlug = this.getFilterSlug();
+    const prefix = this.i18n.t('pdf.file_prefix');
+
+    return `${prefix}-${day}-${month}-${yearShort}-${filterSlug}-${hours}:${minutes}.pdf`;
+  }
+
+  private getFilterSlug(): string {
+    if (this.filter() === 'incorrect') {
+      return this.i18n.t('pdf.filter_slug_incorrect');
+    }
+    if (this.filter() === 'unanswered') {
+      return this.i18n.t('pdf.filter_slug_unanswered');
+    }
+    return this.i18n.t('pdf.filter_slug_all');
   }
 
   private padDatePart(value: number): string {
@@ -465,14 +477,6 @@ export class QuizResultsComponent {
       return this.i18n.t('pdf.correct_suffix');
     }
     return '';
-  }
-
-  private normalizeFileNamePart(input: string): string {
-    return input
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-zA-Z0-9_-]/g, '-')
-      .toLowerCase();
   }
 
   private optionPdfColor(question: Question, option: Option): [number, number, number] {

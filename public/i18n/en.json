@@ -85,6 +85,9 @@
     "your_answer_correct": " (Your answer, correct)",
     "your_answer": " (Your answer)",
     "correct_suffix": " (Correct)",
-    "file_prefix": "quiz-results"
+    "file_prefix": "test",
+    "filter_slug_all": "all",
+    "filter_slug_incorrect": "incorrect",
+    "filter_slug_unanswered": "unanswered"
   }
 }

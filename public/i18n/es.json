@@ -85,6 +85,9 @@
     "your_answer_correct": " (Tu respuesta, correcta)",
     "your_answer": " (Tu respuesta)",
     "correct_suffix": " (Correcta)",
-    "file_prefix": "resultados-test"
+    "file_prefix": "test",
+    "filter_slug_all": "todas",
+    "filter_slug_incorrect": "incorrectas",
+    "filter_slug_unanswered": "sin-contestar"
   }
 }
