@@ -17,7 +17,12 @@ describe('QuizRunnerComponent', () => {
       id: 'q-1',
       topicId: 'topic-1',
       text: 'Question 1',
-      options: [{ id: 'a', text: 'A' }],
+      options: [
+        { id: 'a', text: 'Option A' },
+        { id: 'b', text: 'Option B' },
+        { id: 'c', text: 'Option C' },
+        { id: 'd', text: 'Option D' },
+      ],
       correctOptionId: 'a',
       userSelectedOptionId: null,
     },
@@ -119,6 +124,44 @@ describe('QuizRunnerComponent', () => {
     const enterEvent = { key: 'Enter', preventDefault: vi.fn(), target: document.body } as unknown as KeyboardEvent;
     component.onKeydown(enterEvent);
     expect(enterEvent.preventDefault).toHaveBeenCalled();
+  });
+
+  it('selects option by numeric key 1-4', () => {
+    const component = createComponent();
+    currentIndex = 0;
+
+    const key1Event = { key: '1', preventDefault: vi.fn(), target: document.body } as unknown as KeyboardEvent;
+    component.onKeydown(key1Event);
+    expect(key1Event.preventDefault).toHaveBeenCalled();
+    expect(quizService.selectAnswer).toHaveBeenCalledWith('q-1', 'a');
+
+    vi.clearAllMocks();
+    const key2Event = { key: '2', preventDefault: vi.fn(), target: document.body } as unknown as KeyboardEvent;
+    component.onKeydown(key2Event);
+    expect(key2Event.preventDefault).toHaveBeenCalled();
+    expect(quizService.selectAnswer).toHaveBeenCalledWith('q-1', 'b');
+
+    vi.clearAllMocks();
+    const key3Event = { key: '3', preventDefault: vi.fn(), target: document.body } as unknown as KeyboardEvent;
+    component.onKeydown(key3Event);
+    expect(key3Event.preventDefault).toHaveBeenCalled();
+    expect(quizService.selectAnswer).toHaveBeenCalledWith('q-1', 'c');
+
+    vi.clearAllMocks();
+    const key4Event = { key: '4', preventDefault: vi.fn(), target: document.body } as unknown as KeyboardEvent;
+    component.onKeydown(key4Event);
+    expect(key4Event.preventDefault).toHaveBeenCalled();
+    expect(quizService.selectAnswer).toHaveBeenCalledWith('q-1', 'd');
+  });
+
+  it('ignores numeric key when option index does not exist', () => {
+    const component = createComponent();
+    currentIndex = 1;
+
+    const key3Event = { key: '3', preventDefault: vi.fn(), target: document.body } as unknown as KeyboardEvent;
+    component.onKeydown(key3Event);
+    expect(key3Event.preventDefault).not.toHaveBeenCalled();
+    expect(quizService.selectAnswer).not.toHaveBeenCalled();
   });
 
   it('ignores keyboard shortcuts on input targets', () => {

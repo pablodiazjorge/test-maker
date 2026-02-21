@@ -109,6 +109,16 @@ export class QuizRunnerComponent {
       return;
     }
 
+    const optionIndex = this.getOptionIndexFromKey(event.key);
+    if (optionIndex !== null) {
+      const current = this.currentQuestion();
+      if (current && current.options[optionIndex]) {
+        event.preventDefault();
+        this.selectAnswer(current.id, current.options[optionIndex].id);
+      }
+      return;
+    }
+
     if (event.key !== 'Enter') {
       return;
     }
@@ -120,6 +130,16 @@ export class QuizRunnerComponent {
 
     event.preventDefault();
     this.continueQuiz();
+  }
+
+  private getOptionIndexFromKey(key: string): number | null {
+    const indexMap: Record<string, number> = {
+      '1': 0,
+      '2': 1,
+      '3': 2,
+      '4': 3,
+    };
+    return indexMap[key] !== undefined ? indexMap[key] : null;
   }
 
   private isIgnoredKeyboardTarget(target: EventTarget | null): boolean {
