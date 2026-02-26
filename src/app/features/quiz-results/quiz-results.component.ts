@@ -83,11 +83,29 @@ export class QuizResultsComponent {
     this.filter.set(filter);
   }
 
+  filterCount(filter: ResultsFilter): number {
+    const summary = this.results();
+    if (filter === 'incorrect') {
+      return summary.incorrect;
+    }
+    if (filter === 'unanswered') {
+      return summary.unanswered;
+    }
+    return summary.total;
+  }
+
   filterButtonClasses(filter: ResultsFilter): string {
     if (this.filter() === filter) {
       return 'flex-1 py-1.5 px-3 text-sm font-medium rounded-md bg-white dark:bg-card-dark shadow-sm text-slate-900 dark:text-white border border-slate-200 dark:border-border-dark transition-all';
     }
     return 'flex-1 py-1.5 px-3 text-sm font-medium rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-all';
+  }
+
+  filterCountBadgeClasses(filter: ResultsFilter): string {
+    if (this.filter() === filter) {
+      return 'inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-[11px] font-bold bg-primary/15 text-primary';
+    }
+    return 'inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-[11px] font-bold bg-slate-300/80 dark:bg-slate-600/80 text-slate-700 dark:text-slate-200';
   }
 
   questionNumber(questionId: string): number {

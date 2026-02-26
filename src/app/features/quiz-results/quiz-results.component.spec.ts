@@ -158,6 +158,11 @@ describe('QuizResultsComponent', () => {
     component.setFilter('all');
     expect(component.filterButtonClasses('all')).toContain('bg-white');
     expect(component.filterButtonClasses('incorrect')).toContain('text-slate-500');
+    expect(component.filterCount('all')).toBe(3);
+    expect(component.filterCount('incorrect')).toBe(1);
+    expect(component.filterCount('unanswered')).toBe(1);
+    expect(component.filterCountBadgeClasses('all')).toContain('bg-primary/15');
+    expect(component.filterCountBadgeClasses('incorrect')).toContain('bg-slate-300/80');
   });
 
   it('shows export error when pdf library is unavailable', async () => {

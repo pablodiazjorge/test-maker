@@ -49,6 +49,9 @@
   "results": {
     "title": "Results Review",
     "score_line": "Score: {{score}}/10",
+    "summary_correct": "Correct",
+    "summary_incorrect": "Incorrect",
+    "summary_unanswered": "Unanswered",
     "question_label": "Question {{number}}",
     "marker_correct": "Correct",
     "marker_answer": "Answer",

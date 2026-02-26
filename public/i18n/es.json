@@ -49,6 +49,9 @@
   "results": {
     "title": "Revisión de resultados",
     "score_line": "Puntuación: {{score}}/10",
+    "summary_correct": "Acertadas",
+    "summary_incorrect": "Falladas",
+    "summary_unanswered": "Sin responder",
     "question_label": "Pregunta {{number}}",
     "marker_correct": "Correcta",
     "marker_answer": "Respuesta",
