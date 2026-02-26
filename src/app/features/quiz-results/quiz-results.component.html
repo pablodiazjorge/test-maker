@@ -10,7 +10,7 @@
           </div>
           <div class="flex items-center justify-between mb-4">
             <p class="text-sm text-slate-500 dark:text-slate-400">
-              {{ 'results.score_line' | translate: { correct: results().correct, total: results().total, percent: results().scorePercent } }}
+              {{ 'results.score_line' | translate: { score: results().score, correct: results().correct, total: results().total } }}
             </p>
             <button
               type="button"

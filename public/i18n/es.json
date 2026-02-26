@@ -48,7 +48,7 @@
   },
   "results": {
     "title": "Revisión de resultados",
-    "score_line": "Puntuación: {{correct}}/{{total}} ({{percent}}%)",
+    "score_line": "Puntuación: {{score}}/10",
     "question_label": "Pregunta {{number}}",
     "marker_correct": "Correcta",
     "marker_answer": "Respuesta",
@@ -74,7 +74,7 @@
     "report_title": "Informe de resultados del test",
     "generated": "Generado: {{value}}",
     "filter": "Filtro: {{value}}",
-    "score": "Puntuación: {{correct}}/{{total}} ({{percent}}%)",
+    "score": "Puntuación: {{score}}/10",
     "answered": "Respondidas: {{value}}",
     "correct": "Correctas: {{value}}",
     "incorrect": "Incorrectas: {{value}}",

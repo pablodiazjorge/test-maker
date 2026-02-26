@@ -48,7 +48,7 @@
   },
   "results": {
     "title": "Results Review",
-    "score_line": "Score: {{correct}}/{{total}} ({{percent}}%)",
+    "score_line": "Score: {{score}}/10",
     "question_label": "Question {{number}}",
     "marker_correct": "Correct",
     "marker_answer": "Answer",
@@ -74,7 +74,7 @@
     "report_title": "Quiz Results Report",
     "generated": "Generated: {{value}}",
     "filter": "Filter: {{value}}",
-    "score": "Score: {{correct}}/{{total}} ({{percent}}%)",
+    "score": "Score: {{score}}/10",
     "answered": "Answered: {{value}}",
     "correct": "Correct: {{value}}",
     "incorrect": "Incorrect: {{value}}",

@@ -286,7 +286,7 @@ export class QuizResultsComponent {
       pdf.setFontSize(12);
       pdf.setTextColor(15, 23, 42);
       pdf.text(
-        this.i18n.t('pdf.score', { correct: summary.correct, total: summary.total, percent: summary.scorePercent }),
+        this.i18n.t('pdf.score', { score: summary.score, correct: summary.correct, total: summary.total }),
         margin + 12,
         y + 20,
       );

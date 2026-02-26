@@ -48,7 +48,7 @@ describe('QuizResultsComponent', () => {
     correct: 1,
     incorrect: 1,
     unanswered: 1,
-    scorePercent: 33,
+    score: 3.33,
     byTopic: [],
   };
 

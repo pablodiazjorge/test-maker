@@ -121,7 +121,7 @@ describe('QuizService', () => {
     expect(results.correct).toBe(1);
     expect(results.incorrect).toBe(1);
     expect(results.unanswered).toBe(1);
-    expect(results.scorePercent).toBe(33); // 1 correct out of 3 total
+    expect(results.score).toBe(3.33); // 1 correct out of 3 total, no penalty yet
 
     const totalByTopic = results.byTopic.reduce((sum, t) => sum + t.total, 0);
     const correctByTopic = results.byTopic.reduce((sum, t) => sum + t.correct, 0);
@@ -133,6 +133,34 @@ describe('QuizService', () => {
     expect(incorrectByTopic).toBe(results.incorrect);
     expect(unansweredByTopic).toBe(results.unanswered);
     expect(results.byTopic).toHaveLength(2);
+  });
+
+  it('applies a penalty of one question value for every three incorrect answers', () => {
+    service.setMasterData(createMasterTopicsFixture({ topicCount: 1, questionsPerTopic: 6 }), 'alice');
+    service.startQuiz({
+      questionCount: 6,
+      shuffleQuestions: false,
+      shuffleAnswers: false,
+      selectedTopicIds: ['topic-1'],
+    });
+
+    const questions = service.questions();
+    expect(questions).toHaveLength(6);
+
+    for (const question of questions.slice(0, 3)) {
+      service.selectAnswer(question.id, question.correctOptionId);
+    }
+
+    for (const question of questions.slice(3, 6)) {
+      const incorrectOption = question.options.find((option) => option.id !== question.correctOptionId);
+      expect(incorrectOption).toBeDefined();
+      service.selectAnswer(question.id, incorrectOption!.id);
+    }
+
+    const results = service.results();
+    expect(results.correct).toBe(3);
+    expect(results.incorrect).toBe(3);
+    expect(results.score).toBe(3.33); // (3 - floor(3/3)) * (10/6) = 3.33
   });
 
   it('restores cached master data for an existing user', () => {

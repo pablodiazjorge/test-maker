@@ -8,7 +8,7 @@ export interface QuizResults {
   correct: number;
   incorrect: number;
   unanswered: number;
-  scorePercent: number;
+  score: number;
   byTopic: Array<{
     topicId: string;
     topicName: string;
@@ -106,13 +106,18 @@ export class QuizService {
     }
 
     const total = questions.length;
+    const questionValue = total ? 10 / total : 0;
+    const penaltyQuestions = Math.floor(incorrect / 3);
+    const rawScore = (correct - penaltyQuestions) * questionValue;
+    const score = total ? Number(Math.max(0, Math.min(10, rawScore)).toFixed(2)) : 0;
+
     return {
       total,
       answered: correct + incorrect,
       correct,
       incorrect,
       unanswered,
-      scorePercent: total ? Math.round((correct / total) * 100) : 0,
+      score,
       byTopic: [...topicStats.values()],
     };
   });
