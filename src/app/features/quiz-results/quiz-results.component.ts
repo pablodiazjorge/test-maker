@@ -306,7 +306,11 @@ export class QuizResultsComponent {
         const statusColor = this.questionStatusColor(question);
         const questionTitlePrefix = `${this.i18n.t('runner.question_label', {
           number: this.questionNumber(question.id),
-        })} - ${this.topicName(question.topicId)} -`;
+        })} - ${this.topicName(question.topicId)}`;
+        const questionTitleStatusText = ` - ${statusLabel}`;
+        const statusFitsInSameLine =
+          margin + pdf.getTextWidth(questionTitlePrefix) + pdf.getTextWidth(questionTitleStatusText) <=
+          pageWidth - margin;
         const questionLines = pdf.splitTextToSize(question.text, contentWidth);
         const optionGroups = question.options.map((option, index) => {
           const optionText = `${this.optionLetter(index)}) ${option.text}`;
@@ -324,8 +328,9 @@ export class QuizResultsComponent {
             0,
           );
         const estimatedHeight = 34 + questionLines.length * lineHeight + 8 + optionsHeight + 14;
+        const estimatedHeightWithStatusWrap = estimatedHeight + (statusFitsInSameLine ? 0 : 16);
 
-        if (y + estimatedHeight > pageHeight - margin) {
+        if (y + estimatedHeightWithStatusWrap > pageHeight - margin) {
           pdf.addPage();
           y = margin;
         }
@@ -335,8 +340,14 @@ export class QuizResultsComponent {
         pdf.setTextColor(15, 23, 42);
         pdf.text(questionTitlePrefix, margin, y);
         pdf.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
-        pdf.text(statusLabel, margin + pdf.getTextWidth(`${questionTitlePrefix} `), y);
-        y += 18;
+        if (statusFitsInSameLine) {
+          pdf.text(questionTitleStatusText, margin + pdf.getTextWidth(questionTitlePrefix), y);
+          y += 18;
+        } else {
+          y += 16;
+          pdf.text(statusLabel, margin, y);
+          y += 16;
+        }
 
         pdf.setFont('helvetica', 'normal');
         pdf.setFontSize(11);
