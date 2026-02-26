@@ -1,5 +1,5 @@
 import { computed, Injectable, signal } from '@angular/core';
-import { DEFAULT_QUIZ_CONFIG, MasterTopic, Option, Question, QuizConfig, Topic } from '../data/quiz.data';
+import { DEFAULT_QUIZ_CONFIG, MasterQuestion, MasterTopic, MasterTopicChild, Option, Question, QuizConfig, Topic, TopicGroup } from '../data/quiz.data';
 import { clearCacheValue, readCacheValue, writeCacheValue } from '../state/browser-cache';
 
 export interface QuizResults {
@@ -24,6 +24,7 @@ export class QuizService {
   private static readonly MASTER_DATA_CACHE_KEY_PREFIX = 'test-maker.master-data';
 
   private topicsData: Topic[] = [];
+  private topicGroupsData: TopicGroup[] = [];
   private allQuestions: Question[] = [];
   private questionCountByTopicId = new Map<string, number>();
   private currentDataUserId: string | null = null;
@@ -37,6 +38,10 @@ export class QuizService {
 
   get topics(): readonly Topic[] {
     return this.topicsData;
+  }
+
+  get topicGroups(): readonly TopicGroup[] {
+    return this.topicGroupsData;
   }
 
   readonly config = computed(() => this._config());
@@ -128,8 +133,9 @@ export class QuizService {
     const normalizedUserId = userId.trim();
 
     try {
-      const { topics, questions } = this.normalizeMasterData(masterTopics);
+      const { topics, topicGroups, questions } = this.normalizeMasterData(masterTopics);
       this.topicsData = topics;
+      this.topicGroupsData = topicGroups;
       this.allQuestions = questions;
       this.questionCountByTopicId = this.buildQuestionCountByTopicId(questions);
       this.currentDataUserId = normalizedUserId;
@@ -170,6 +176,7 @@ export class QuizService {
     const clearCache = options?.clearCache ?? true;
 
     this.topicsData = [];
+    this.topicGroupsData = [];
     this.allQuestions = [];
     this.questionCountByTopicId = new Map<string, number>();
     this._questions.set([]);
@@ -354,67 +361,162 @@ export class QuizService {
     return map;
   }
 
-  private normalizeMasterData(masterTopics: MasterTopic[]): { topics: Topic[]; questions: Question[] } {
+  private normalizeMasterData(masterTopics: MasterTopic[]): { topics: Topic[]; topicGroups: TopicGroup[]; questions: Question[] } {
     if (!Array.isArray(masterTopics)) {
-      return { topics: [], questions: [] };
+      return { topics: [], topicGroups: [], questions: [] };
     }
 
     const topics: Topic[] = [];
+    const topicGroups: TopicGroup[] = [];
     const questions: Question[] = [];
+    const seenTopicIds = new Set<string>();
 
-    for (const topic of masterTopics) {
-      if (!topic || typeof topic.id !== 'string' || typeof topic.name !== 'string') {
+    for (const parentTopic of masterTopics) {
+      if (!parentTopic || typeof parentTopic.id !== 'string' || typeof parentTopic.name !== 'string') {
         continue;
       }
 
-      topics.push({
-        id: topic.id,
-        name: topic.name,
-        description: typeof topic.description === 'string' ? topic.description : '',
-      });
+      const parentDescription = typeof parentTopic.description === 'string' ? parentTopic.description : '';
+      const childTopics = this.readChildTopics(parentTopic);
 
-      if (!Array.isArray(topic.questions)) {
-        continue;
-      }
+      if (childTopics.length > 0) {
+        const normalizedChildren: Topic[] = [];
+        const topicIdsForGroup: string[] = [];
 
-      for (const question of topic.questions) {
-        const questionText = typeof question.text === 'string' ? question.text : question.questionText;
-        if (!question || typeof question.id !== 'string' || typeof questionText !== 'string') {
+        for (const childTopic of childTopics) {
+          const normalizedChild = this.normalizeLeafTopic(childTopic, parentDescription, seenTopicIds);
+          if (!normalizedChild) {
+            continue;
+          }
+
+          topics.push(normalizedChild.topic);
+          questions.push(...normalizedChild.questions);
+          normalizedChildren.push(normalizedChild.topic);
+          topicIdsForGroup.push(normalizedChild.topic.id);
+        }
+
+        if (!topicIdsForGroup.length) {
           continue;
         }
 
-        if (!Array.isArray(question.options) || !question.options.length) {
-          continue;
-        }
-
-        const options = question.options
-          .filter((option) => option && typeof option.id === 'string' && typeof option.text === 'string')
-          .map((option) => ({
-            id: option.id,
-            text: option.text,
-          }));
-
-        if (!options.length) {
-          continue;
-        }
-
-        const isValidCorrectOption = options.some((option) => option.id === question.correctOptionId);
-        if (!isValidCorrectOption) {
-          continue;
-        }
-
-        questions.push({
-          id: question.id,
-          topicId: topic.id,
-          text: questionText,
-          options,
-          correctOptionId: question.correctOptionId,
-          userSelectedOptionId: null,
+        topicGroups.push({
+          id: parentTopic.id,
+          name: parentTopic.name,
+          description: parentDescription,
+          hasChildren: true,
+          topicIds: topicIdsForGroup,
+          children: normalizedChildren,
         });
+        continue;
       }
+
+      const normalizedStandaloneTopic = this.normalizeLeafTopic(parentTopic, parentDescription, seenTopicIds);
+      if (!normalizedStandaloneTopic) {
+        continue;
+      }
+
+      topics.push(normalizedStandaloneTopic.topic);
+      questions.push(...normalizedStandaloneTopic.questions);
+      topicGroups.push({
+        id: parentTopic.id,
+        name: parentTopic.name,
+        description: parentDescription || normalizedStandaloneTopic.topic.description,
+        hasChildren: false,
+        topicIds: [normalizedStandaloneTopic.topic.id],
+        children: [normalizedStandaloneTopic.topic],
+      });
     }
 
-    return { topics, questions };
+    return { topics, topicGroups, questions };
+  }
+
+  private readChildTopics(topic: MasterTopic): MasterTopicChild[] {
+    const candidates = topic as MasterTopic & {
+      topics?: unknown;
+      tests?: unknown;
+      subtopics?: unknown;
+    };
+    const childArrays = [topic.children, candidates.topics, candidates.tests, candidates.subtopics];
+    for (const childArray of childArrays) {
+      if (Array.isArray(childArray)) {
+        return childArray as MasterTopicChild[];
+      }
+    }
+    return [];
+  }
+
+  private normalizeLeafTopic(
+    source: Pick<MasterTopicChild, 'id' | 'name'> & { description?: string; questions?: MasterQuestion[] },
+    fallbackDescription: string,
+    seenTopicIds: Set<string>,
+  ): { topic: Topic; questions: Question[] } | null {
+    if (!source || typeof source.id !== 'string' || typeof source.name !== 'string') {
+      return null;
+    }
+
+    const topicId = source.id.trim();
+    if (!topicId || seenTopicIds.has(topicId)) {
+      return null;
+    }
+
+    const normalizedQuestions = this.normalizeQuestionsForTopic(topicId, source.questions);
+    if (!normalizedQuestions.length) {
+      return null;
+    }
+
+    seenTopicIds.add(topicId);
+    return {
+      topic: {
+        id: topicId,
+        name: source.name,
+        description: typeof source.description === 'string' ? source.description : fallbackDescription,
+      },
+      questions: normalizedQuestions,
+    };
+  }
+
+  private normalizeQuestionsForTopic(topicId: string, sourceQuestions: MasterQuestion[] | undefined): Question[] {
+    if (!Array.isArray(sourceQuestions)) {
+      return [];
+    }
+
+    const questions: Question[] = [];
+    for (const question of sourceQuestions) {
+      const questionText = typeof question?.text === 'string' ? question.text : question?.questionText;
+      if (!question || typeof question.id !== 'string' || typeof questionText !== 'string') {
+        continue;
+      }
+
+      if (!Array.isArray(question.options) || !question.options.length) {
+        continue;
+      }
+
+      const options = question.options
+        .filter((option) => option && typeof option.id === 'string' && typeof option.text === 'string')
+        .map((option) => ({
+          id: option.id,
+          text: option.text,
+        }));
+      if (!options.length) {
+        continue;
+      }
+
+      const isValidCorrectOption = options.some((option) => option.id === question.correctOptionId);
+      if (!isValidCorrectOption) {
+        continue;
+      }
+
+      questions.push({
+        id: question.id,
+        topicId,
+        text: questionText,
+        options,
+        correctOptionId: question.correctOptionId,
+        userSelectedOptionId: null,
+      });
+    }
+
+    return questions;
   }
 
   private buildMasterDataCacheKey(userId: string): string {

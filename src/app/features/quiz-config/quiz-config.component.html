@@ -102,23 +102,11 @@
 
   <div class="space-y-3">
     <h3 class="text-sm font-semibold text-slate-900 dark:text-white px-1">{{ 'config.select_topic' | translate }}</h3>
-    <div class="grid grid-cols-1 gap-3">
-      @for (topic of topics; track topic.id) {
-        <button type="button" [class]="topicButtonClasses(topic.id)" (click)="toggleTopic(topic.id, $event)">
-          <div>
-            <span [class]="topicNameClasses(topic.id)">{{ topic.name }}</span>
-            <span class="block text-xs text-slate-500 dark:text-muted-foreground mt-0.5">{{ topic.description }}</span>
-          </div>
-          <div [class]="topicIndicatorClasses(topic.id)">
-            <div
-              class="w-2.5 h-2.5 rounded-full bg-primary transition-opacity"
-              [class.opacity-100]="isTopicSelected(topic.id)"
-              [class.opacity-0]="!isTopicSelected(topic.id)"
-            ></div>
-          </div>
-        </button>
-      }
-    </div>
+    <app-topic-group-selector
+      [groups]="topicGroups"
+      [selectedTopicIds]="selectedTopicIds"
+      (selectedTopicIdsChange)="onSelectedTopicIdsChange($event)"
+    />
 
     @if (showTopicValidationError) {
       <p class="text-xs text-red-500 px-1">{{ 'config.select_topic_validation' | translate }}</p>

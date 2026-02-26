@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { QuizService } from './quiz.service';
-import { createMasterTopicsFixture } from './quiz.service.fixtures';
+import { createMasterTopicGroupsFixture, createMasterTopicsFixture } from './quiz.service.fixtures';
 
 describe('QuizService', () => {
   let service: QuizService;
@@ -22,8 +22,32 @@ describe('QuizService', () => {
     expect(loaded).toBe(true);
     expect(service.isDataLoaded()).toBe(true);
     expect(service.topics).toHaveLength(2);
+    expect(service.topicGroups).toHaveLength(2);
+    expect(service.topicGroups.every((group) => group.hasChildren === false)).toBe(true);
     expect(service.getQuestionCountForTopic('topic-1')).toBe(2);
     expect(service.getQuestionCountForTopic('topic-2')).toBe(2);
+  });
+
+  it('loads grouped topics with child and standalone modes', () => {
+    const loaded = service.setMasterData(createMasterTopicGroupsFixture(), 'alice');
+
+    expect(loaded).toBe(true);
+    expect(service.isDataLoaded()).toBe(true);
+    expect(service.topics).toHaveLength(3);
+    expect(service.topicGroups).toHaveLength(2);
+    expect(service.topicGroups[0]).toMatchObject({
+      id: 'tema-3-union-europea',
+      hasChildren: true,
+      topicIds: ['topic-1', 'topic-2'],
+    });
+    expect(service.topicGroups[1]).toMatchObject({
+      id: 'tema-prueba-sin-hijos',
+      hasChildren: false,
+      topicIds: ['tema-prueba-sin-hijos'],
+    });
+    expect(service.getQuestionCountForTopic('topic-1')).toBe(2);
+    expect(service.getQuestionCountForTopic('topic-2')).toBe(2);
+    expect(service.getQuestionCountForTopic('tema-prueba-sin-hijos')).toBe(2);
   });
 
   it('fails when master data is empty', () => {

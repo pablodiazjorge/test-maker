@@ -9,15 +9,36 @@ describe('QuizConfigComponent', () => {
   const topics = [
     { id: 'topic-1', name: 'HTML', description: 'desc' },
     { id: 'topic-2', name: 'CSS', description: 'desc' },
+    { id: 'topic-3', name: 'JS', description: 'desc' },
+  ];
+  const topicGroups = [
+    {
+      id: 'tema-3',
+      name: 'Tema 3',
+      description: 'Bloque principal',
+      hasChildren: true,
+      topicIds: ['topic-1', 'topic-2'],
+      children: [topics[0], topics[1]],
+    },
+    {
+      id: 'tema-prueba-sin-hijos',
+      name: 'Tema Prueba',
+      description: 'Sin hijos',
+      hasChildren: false,
+      topicIds: ['topic-3'],
+      children: [topics[2]],
+    },
   ];
   const topicCounts = new Map<string, number>([
     ['topic-1', 2],
     ['topic-2', 4],
+    ['topic-3', 1],
   ]);
 
   const router = { navigate: vi.fn(async () => true) };
   const quizService = {
     topics,
+    topicGroups,
     getQuestionCountForTopics: vi.fn((topicIds: string[]) =>
       topicIds.reduce((sum, id) => sum + (topicCounts.get(id) ?? 0), 0),
     ),
@@ -32,10 +53,6 @@ describe('QuizConfigComponent', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    Object.defineProperty(window, 'matchMedia', {
-      writable: true,
-      value: vi.fn().mockReturnValue({ matches: true }),
-    });
     TestBed.configureTestingModule({
       providers: [
         { provide: QuizService, useValue: quizService },
@@ -56,13 +73,14 @@ describe('QuizConfigComponent', () => {
     expect(component.selectedTopicIds).toEqual(['topic-1']);
     expect(component.maxQuestionCount).toBe(2);
     expect(component.questionCount).toBe(2);
+    expect(component.topicGroups).toEqual(topicGroups);
   });
 
-  it('toggles topic selection and syncs question count', () => {
+  it('updates selected topics from grouped selector and syncs count', () => {
     const component = createComponent();
     component.ngOnInit();
 
-    component.toggleTopic('topic-2');
+    component.onSelectedTopicIdsChange(['topic-1', 'topic-2']);
 
     expect(component.selectedTopicIds).toEqual(['topic-1', 'topic-2']);
     expect(component.maxQuestionCount).toBe(6);
@@ -125,31 +143,6 @@ describe('QuizConfigComponent', () => {
     const event = { key: 'e', preventDefault: vi.fn() } as unknown as KeyboardEvent;
     component.blockInvalidNumberInput(event);
     expect(event.preventDefault).toHaveBeenCalled();
-  });
-
-  it('builds selected and unselected topic classes', () => {
-    const component = createComponent();
-    component.ngOnInit();
-    expect(component.topicButtonClasses('topic-1')).toContain('ring-1');
-    expect(component.topicNameClasses('topic-1')).toContain('text-primary');
-    expect(component.topicIndicatorClasses('topic-1')).toContain('bg-primary/10');
-
-    expect(component.topicButtonClasses('topic-2')).toContain('group');
-    expect(component.topicNameClasses('topic-2')).toContain('group-hover:text-primary');
-    expect(component.topicIndicatorClasses('topic-2')).toContain('group-hover:border-primary');
-  });
-
-  it('blurs topic target when toggled by mouse click', () => {
-    const component = createComponent();
-    component.ngOnInit();
-    const target = document.createElement('button');
-    const blurSpy = vi.spyOn(target, 'blur');
-    const event = new MouseEvent('click', { detail: 1 });
-    Object.defineProperty(event, 'currentTarget', { value: target });
-
-    component.toggleTopic('topic-2', event);
-
-    expect(blurSpy).toHaveBeenCalled();
   });
 
   it('logs out, clears state and navigates to login', async () => {

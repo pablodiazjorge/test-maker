@@ -1,0 +1,58 @@
+<div class="grid grid-cols-1 gap-3">
+  @for (group of groups; track group.id) {
+    <article [class]="groupCardClasses(group)">
+      <div class="p-4 flex items-start gap-2">
+        <button type="button" class="flex-1 min-w-0 text-left" (click)="toggleGroupSelection(group, $event)">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <span [class]="groupNameClasses(group)">{{ group.name }}</span>
+              <span class="block text-xs text-slate-500 dark:text-muted-foreground mt-0.5">{{ group.description }}</span>
+              @if (group.hasChildren) {
+                <span class="inline-flex items-center mt-2 text-[11px] font-semibold text-slate-500 dark:text-muted-foreground">
+                  {{ groupSelectionSummary(group) }}
+                </span>
+              }
+            </div>
+            <div [class]="groupIndicatorClasses(group)">
+              @if (showGroupIndicatorDot(group)) {
+                <div class="w-2.5 h-2.5 rounded-full bg-primary"></div>
+              }
+              @if (showGroupIndicatorDash(group)) {
+                <div class="w-2.5 h-0.5 rounded-full bg-primary"></div>
+              }
+            </div>
+          </div>
+        </button>
+
+        @if (group.hasChildren) {
+          <button
+            type="button"
+            class="shrink-0 h-8 w-8 rounded-lg border border-slate-200 dark:border-border-dark bg-white dark:bg-card-dark text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-500 transition-colors"
+            (click)="toggleGroupExpanded(group.id, $event)"
+            [attr.aria-expanded]="isGroupExpanded(group.id)"
+          >
+            <span class="material-symbols-outlined text-[20px] leading-none">
+              {{ isGroupExpanded(group.id) ? 'expand_less' : 'expand_more' }}
+            </span>
+          </button>
+        }
+      </div>
+
+      @if (group.hasChildren && isGroupExpanded(group.id)) {
+        <div class="px-4 pb-4 border-t border-slate-100 dark:border-border-dark/80 space-y-2">
+          <div class="pt-3">
+            @for (topic of group.children; track topic.id) {
+              <button type="button" [class]="childButtonClasses(topic.id)" (click)="toggleChildTopic(topic.id, $event)">
+                <div class="min-w-0">
+                  <span [class]="childNameClasses(topic.id)">{{ topic.name }}</span>
+                  <span class="block text-xs text-slate-500 dark:text-muted-foreground mt-0.5">{{ topic.description }}</span>
+                </div>
+                <div [class]="childIndicatorClasses(topic.id)"></div>
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </article>
+  }
+</div>

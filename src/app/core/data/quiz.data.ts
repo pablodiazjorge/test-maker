@@ -11,11 +11,19 @@ export interface MasterQuestion {
   correctOptionId: string;
 }
 
+export interface MasterTopicChild {
+  id: string;
+  name: string;
+  description?: string;
+  questions: MasterQuestion[];
+}
+
 export interface MasterTopic {
   id: string;
   name: string;
-  description: string;
-  questions: MasterQuestion[];
+  description?: string;
+  questions?: MasterQuestion[];
+  children?: MasterTopicChild[];
 }
 
 export interface Question {
@@ -31,6 +39,15 @@ export interface Topic {
   id: string;
   name: string;
   description: string;
+}
+
+export interface TopicGroup {
+  id: string;
+  name: string;
+  description: string;
+  hasChildren: boolean;
+  topicIds: string[];
+  children: Topic[];
 }
 
 export interface QuizConfig {

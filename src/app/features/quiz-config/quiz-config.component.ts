@@ -5,23 +5,22 @@ import { TranslateModule } from '@ngx-translate/core';
 import { DEFAULT_QUIZ_CONFIG } from '../../core/data/quiz.data';
 import { QuizService } from '../../core/services/quiz.service';
 import { injectAuthStore } from '../../core/state/auth.store';
+import { TopicGroupSelectorComponent } from '../../shared/components/topic-group-selector/topic-group-selector.component';
 import { ThemeToggleButtonComponent } from '../../shared/components/theme-toggle-button/theme-toggle-button.component';
 
 @Component({
   selector: 'app-quiz-config',
   standalone: true,
-  imports: [FormsModule, ThemeToggleButtonComponent, TranslateModule],
+  imports: [FormsModule, ThemeToggleButtonComponent, TopicGroupSelectorComponent, TranslateModule],
   templateUrl: './quiz-config.component.html',
 })
 export class QuizConfigComponent implements OnInit {
   private readonly quizService = inject(QuizService);
   private readonly router = inject(Router);
   private readonly authStore = injectAuthStore();
-  private readonly hasHoverCapability =
-    typeof window !== 'undefined' && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
-  get topics() {
-    return this.quizService.topics;
+  get topicGroups() {
+    return this.quizService.topicGroups;
   }
 
   questionCount = DEFAULT_QUIZ_CONFIG.questionCount;
@@ -44,27 +43,19 @@ export class QuizConfigComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    const availableTopicIds = new Set(this.topics.map((topic) => topic.id));
+    const availableTopicIds = new Set(this.quizService.topics.map((topic) => topic.id));
     this.selectedTopicIds = this.selectedTopicIds.filter((topicId) => availableTopicIds.has(topicId));
 
-    if (!this.selectedTopicIds.length && this.topics.length) {
-      this.selectedTopicIds = [this.topics[0].id];
+    if (!this.selectedTopicIds.length && this.quizService.topics.length) {
+      this.selectedTopicIds = [this.quizService.topics[0].id];
     }
 
     this.questionCount = this.maxQuestionCount;
     this.syncQuestionCountWithSelection();
   }
 
-  isTopicSelected(topicId: string): boolean {
-    return this.selectedTopicIds.includes(topicId);
-  }
-
-  toggleTopic(topicId: string, event?: Event): void {
-    if (this.isTopicSelected(topicId)) {
-      this.selectedTopicIds = this.selectedTopicIds.filter((id) => id !== topicId);
-    } else {
-      this.selectedTopicIds = [...this.selectedTopicIds, topicId];
-    }
+  onSelectedTopicIdsChange(topicIds: string[]): void {
+    this.selectedTopicIds = topicIds;
     this.showTopicValidationError = false;
 
     if (this.selectedTopicIds.length > 0) {
@@ -72,12 +63,6 @@ export class QuizConfigComponent implements OnInit {
     }
 
     this.syncQuestionCountWithSelection();
-    if (event instanceof MouseEvent && event.detail > 0) {
-      const target = event.currentTarget;
-      if (target instanceof HTMLElement) {
-        target.blur();
-      }
-    }
   }
 
   startQuiz(): void {
@@ -94,30 +79,6 @@ export class QuizConfigComponent implements OnInit {
     });
 
     void this.router.navigate(['/quiz']);
-  }
-
-  topicButtonClasses(topicId: string): string {
-    if (this.isTopicSelected(topicId)) {
-      return 'flex items-center justify-between w-full p-4 bg-white dark:bg-card-dark border border-primary dark:border-primary rounded-xl ring-1 ring-primary/20 transition-all text-left shadow-md shadow-primary/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30';
-    }
-    const hoverClasses = this.hasHoverCapability ? 'group hover:border-primary/50 dark:hover:border-primary/50' : '';
-    return `flex items-center justify-between w-full p-4 bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-xl transition-all text-left shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${hoverClasses}`.trim();
-  }
-
-  topicNameClasses(topicId: string): string {
-    if (this.isTopicSelected(topicId)) {
-      return 'block text-sm font-semibold text-slate-900 dark:text-white text-primary';
-    }
-    const hoverClasses = this.hasHoverCapability ? 'group-hover:text-primary transition-colors' : '';
-    return `block text-sm font-semibold text-slate-900 dark:text-white ${hoverClasses}`.trim();
-  }
-
-  topicIndicatorClasses(topicId: string): string {
-    if (this.isTopicSelected(topicId)) {
-      return 'w-5 h-5 shrink-0 aspect-square rounded-full border-2 border-primary flex items-center justify-center bg-primary/10';
-    }
-    const hoverClasses = this.hasHoverCapability ? 'group-hover:border-primary group-hover:bg-primary/10' : '';
-    return `w-5 h-5 shrink-0 aspect-square rounded-full border-2 border-slate-300 dark:border-slate-600 flex items-center justify-center ${hoverClasses}`.trim();
   }
 
   onQuestionCountChange(value: number | string): void {
