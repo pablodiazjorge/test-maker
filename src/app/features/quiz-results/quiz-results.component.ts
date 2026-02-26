@@ -83,33 +83,11 @@ export class QuizResultsComponent {
     this.filter.set(filter);
   }
 
-  filterCount(filter: ResultsFilter): number {
-    const summary = this.results();
-    if (filter === 'incorrect') {
-      return summary.incorrect;
-    }
-    if (filter === 'unanswered') {
-      return summary.unanswered;
-    }
-    return summary.total;
-  }
-
-  filterAriaLabel(filter: ResultsFilter): string {
-    return `${this.filterLabel(filter)} (${this.filterCount(filter)})`;
-  }
-
   filterButtonClasses(filter: ResultsFilter): string {
     if (this.filter() === filter) {
-      return 'flex-1 min-w-0 h-11 px-2 text-[13px] font-semibold rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 shadow-sm transition-all';
+      return 'flex-1 py-1.5 px-3 text-sm font-medium rounded-md bg-white dark:bg-card-dark shadow-sm text-slate-900 dark:text-white border border-slate-200 dark:border-border-dark transition-all';
     }
-    return 'flex-1 min-w-0 h-11 px-2 text-[13px] font-medium rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-700/50 transition-all';
-  }
-
-  filterCountBadgeClasses(filter: ResultsFilter): string {
-    if (this.filter() === filter) {
-      return 'inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[11px] font-semibold bg-slate-900/10 text-slate-700 dark:bg-white/15 dark:text-white';
-    }
-    return 'inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[11px] font-semibold bg-slate-300/70 dark:bg-slate-600/70 text-slate-700 dark:text-slate-100';
+    return 'flex-1 py-1.5 px-3 text-sm font-medium rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-all';
   }
 
   questionNumber(questionId: string): number {

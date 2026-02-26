@@ -157,14 +157,7 @@ describe('QuizResultsComponent', () => {
 
     component.setFilter('all');
     expect(component.filterButtonClasses('all')).toContain('bg-white');
-    expect(component.filterButtonClasses('incorrect')).toContain('text-slate-600');
-    expect(component.filterCount('all')).toBe(3);
-    expect(component.filterCount('incorrect')).toBe(1);
-    expect(component.filterCount('unanswered')).toBe(1);
-    expect(component.filterAriaLabel('all')).toBe('actions.all (3)');
-    expect(component.filterAriaLabel('incorrect')).toBe('actions.incorrect (1)');
-    expect(component.filterCountBadgeClasses('all')).toContain('bg-slate-900/10');
-    expect(component.filterCountBadgeClasses('incorrect')).toContain('bg-slate-300/70');
+    expect(component.filterButtonClasses('incorrect')).toContain('text-slate-500');
   });
 
   it('shows export error when pdf library is unavailable', async () => {

@@ -21,65 +21,32 @@
             </button>
           </div>
           <div class="grid grid-cols-3 gap-2 mb-4">
-            <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/35 px-3 py-2.5">
-              <p class="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500 dark:text-slate-300">
-                <span class="material-symbols-outlined text-[14px] text-success">check_circle</span>
-                {{ 'results.summary_correct' | translate }}
-              </p>
-              <p class="mt-1 text-2xl font-bold leading-none text-slate-900 dark:text-white">{{ results().correct }}</p>
+            <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/35 px-3 py-3">
+              <span class="sr-only">{{ 'results.summary_correct' | translate }}</span>
+              <div class="flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-[18px] text-success">check_circle</span>
+                <p class="text-3xl font-bold leading-none text-slate-900 dark:text-white">{{ results().correct }}</p>
+              </div>
             </div>
-            <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/35 px-3 py-2.5">
-              <p class="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500 dark:text-slate-300">
-                <span class="material-symbols-outlined text-[14px] text-error">cancel</span>
-                {{ 'results.summary_incorrect' | translate }}
-              </p>
-              <p class="mt-1 text-2xl font-bold leading-none text-slate-900 dark:text-white">{{ results().incorrect }}</p>
+            <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/35 px-3 py-3">
+              <span class="sr-only">{{ 'results.summary_incorrect' | translate }}</span>
+              <div class="flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-[18px] text-error">cancel</span>
+                <p class="text-3xl font-bold leading-none text-slate-900 dark:text-white">{{ results().incorrect }}</p>
+              </div>
             </div>
-            <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/35 px-3 py-2.5">
-              <p class="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500 dark:text-slate-300">
-                <span class="material-symbols-outlined text-[14px] text-slate-400 dark:text-slate-300">radio_button_unchecked</span>
-                {{ 'results.summary_unanswered' | translate }}
-              </p>
-              <p class="mt-1 text-2xl font-bold leading-none text-slate-900 dark:text-white">{{ results().unanswered }}</p>
+            <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/35 px-3 py-3">
+              <span class="sr-only">{{ 'results.summary_unanswered' | translate }}</span>
+              <div class="flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-[18px] text-slate-400 dark:text-slate-300">radio_button_unchecked</span>
+                <p class="text-3xl font-bold leading-none text-slate-900 dark:text-white">{{ results().unanswered }}</p>
+              </div>
             </div>
           </div>
-          <div class="grid grid-cols-3 gap-1.5 p-1.5 rounded-xl bg-slate-100/80 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700">
-            <button
-              type="button"
-              [class]="filterButtonClasses('all')"
-              (click)="setFilter('all')"
-              [attr.aria-label]="filterAriaLabel('all')"
-              [attr.aria-pressed]="filter() === 'all'"
-            >
-              <span class="inline-flex items-center justify-center gap-1.5 w-full">
-                <span class="truncate">{{ 'actions.all' | translate }}</span>
-                <span [class]="filterCountBadgeClasses('all')">{{ filterCount('all') }}</span>
-              </span>
-            </button>
-            <button
-              type="button"
-              [class]="filterButtonClasses('incorrect')"
-              (click)="setFilter('incorrect')"
-              [attr.aria-label]="filterAriaLabel('incorrect')"
-              [attr.aria-pressed]="filter() === 'incorrect'"
-            >
-              <span class="inline-flex items-center justify-center gap-1.5 w-full">
-                <span class="truncate">{{ 'actions.incorrect' | translate }}</span>
-                <span [class]="filterCountBadgeClasses('incorrect')">{{ filterCount('incorrect') }}</span>
-              </span>
-            </button>
-            <button
-              type="button"
-              [class]="filterButtonClasses('unanswered')"
-              (click)="setFilter('unanswered')"
-              [attr.aria-label]="filterAriaLabel('unanswered')"
-              [attr.aria-pressed]="filter() === 'unanswered'"
-            >
-              <span class="inline-flex items-center justify-center gap-1.5 w-full">
-                <span class="truncate">{{ 'actions.unanswered' | translate }}</span>
-                <span [class]="filterCountBadgeClasses('unanswered')">{{ filterCount('unanswered') }}</span>
-              </span>
-            </button>
+          <div class="flex p-1 bg-slate-200 dark:bg-border-dark rounded-lg">
+            <button type="button" [class]="filterButtonClasses('all')" (click)="setFilter('all')">{{ 'actions.all' | translate }}</button>
+            <button type="button" [class]="filterButtonClasses('incorrect')" (click)="setFilter('incorrect')">{{ 'actions.incorrect' | translate }}</button>
+            <button type="button" [class]="filterButtonClasses('unanswered')" (click)="setFilter('unanswered')">{{ 'actions.unanswered' | translate }}</button>
           </div>
         </div>
 
