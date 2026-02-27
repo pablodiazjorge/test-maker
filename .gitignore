@@ -49,3 +49,4 @@ public/assets/master-data-guest.json
 .secrets/json-decrypt-key-user2.txt
 .secrets/json-decrypt-key-guest.txt
 .secrets/passwords.txt
+README-casuistica-codificacion-master-data.md
