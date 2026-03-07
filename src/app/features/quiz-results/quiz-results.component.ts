@@ -340,6 +340,59 @@ export class QuizResultsComponent implements OnInit {
         pdf.text(status, x, y);
         y += step;
       };
+      const writeOptionWithMarker = (
+        optionText: string,
+        markerText: string | null,
+        markerColor: [number, number, number] | null,
+        maxWidth: number,
+        x = margin + 12,
+        step = lineHeight,
+      ): void => {
+        const optionLines = pdf.splitTextToSize(String(optionText ?? ''), maxWidth);
+        if (!optionLines.length) {
+          ensurePageSpace(step);
+          y += step;
+          return;
+        }
+
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(51, 65, 85);
+        for (const line of optionLines) {
+          ensurePageSpace(step);
+          pdf.text(line, x, y);
+          y += step;
+        }
+
+        if (!markerText || !markerColor) {
+          return;
+        }
+
+        const marker = markerText.trim();
+        if (!marker) {
+          return;
+        }
+
+        const lastLine = optionLines[optionLines.length - 1] ?? '';
+        const lastLineY = y - step;
+        const gap = ' ';
+        pdf.setFont('helvetica', 'normal');
+        const lastLineWidth = pdf.getTextWidth(lastLine);
+        const gapWidth = pdf.getTextWidth(gap);
+        pdf.setFont('helvetica', 'bold');
+        const markerWidth = pdf.getTextWidth(marker);
+        const fitsInline = lastLineWidth + gapWidth + markerWidth <= maxWidth;
+
+        pdf.setTextColor(markerColor[0], markerColor[1], markerColor[2]);
+        if (fitsInline) {
+          pdf.text(marker, x + lastLineWidth + gapWidth, lastLineY);
+        } else {
+          ensurePageSpace(step);
+          pdf.text(marker, x + 8, y);
+          y += step;
+        }
+
+        pdf.setFont('helvetica', 'normal');
+      };
 
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(20);
@@ -416,16 +469,9 @@ export class QuizResultsComponent implements OnInit {
         writeLine(this.i18n.t('pdf.options_label'));
 
         for (const group of optionGroups) {
-          pdf.setTextColor(51, 65, 85);
-          writeWrapped(group.optionText, safeContentWidth - 12, margin + 12, lineHeight);
-
-          if (group.markerText) {
-            const markerColor = this.optionPdfColor(question, group.option);
-            pdf.setFont('helvetica', 'bold');
-            pdf.setTextColor(markerColor[0], markerColor[1], markerColor[2]);
-            writeWrapped(group.markerText.trim(), safeContentWidth - 20, margin + 20, lineHeight);
-            pdf.setFont('helvetica', 'normal');
-          }
+          const markerText = group.markerText?.trim() ?? null;
+          const markerColor = markerText ? this.optionPdfColor(question, group.option) : null;
+          writeOptionWithMarker(group.optionText, markerText, markerColor, safeContentWidth - 12, margin + 12, lineHeight);
 
           addGap(4);
         }
