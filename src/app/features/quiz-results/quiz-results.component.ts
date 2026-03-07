@@ -296,6 +296,46 @@ export class QuizResultsComponent implements OnInit {
           y += step;
         }
       };
+      const writeQuestionHeaderWithStatus = (
+        title: string,
+        status: string,
+        statusColor: [number, number, number],
+        maxWidth: number,
+        x = margin,
+        step = lineHeight,
+      ): void => {
+        const combined = `${title} - ${status}`;
+        const lines = pdf.splitTextToSize(combined, maxWidth);
+        if (!lines.length) {
+          ensurePageSpace(step);
+          y += step;
+          return;
+        }
+
+        let statusX = x;
+        let statusY = y;
+        let canHighlightStatus = false;
+
+        for (const [index, line] of lines.entries()) {
+          ensurePageSpace(step);
+          pdf.setTextColor(15, 23, 42);
+          pdf.text(line, x, y);
+
+          if (index === lines.length - 1 && line.endsWith(status)) {
+            const prefix = line.slice(0, line.length - status.length);
+            statusX = x + pdf.getTextWidth(prefix);
+            statusY = y;
+            canHighlightStatus = true;
+          }
+
+          y += step;
+        }
+
+        if (canHighlightStatus) {
+          pdf.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
+          pdf.text(status, statusX, statusY);
+        }
+      };
 
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(20);
@@ -359,10 +399,7 @@ export class QuizResultsComponent implements OnInit {
         pdf.setFont('helvetica', 'bold');
         pdf.setFontSize(12);
         pdf.setTextColor(15, 23, 42);
-        writeWrapped(questionTitle, safeContentWidth, margin, lineHeight);
-
-        pdf.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
-        writeLine(statusLabel, margin, 16);
+        writeQuestionHeaderWithStatus(questionTitle, statusLabel, statusColor, safeContentWidth, margin, lineHeight);
 
         pdf.setFont('helvetica', 'normal');
         pdf.setFontSize(11);
