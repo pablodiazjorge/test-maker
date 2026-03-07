@@ -2,7 +2,7 @@
   class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-50 font-display min-h-screen flex flex-col overflow-hidden relative selection:bg-primary selection:text-white"
 >
   @if (questions().length) {
-    <main class="flex-1 overflow-y-auto pb-24 relative">
+    <main #resultsScrollContainer class="flex-1 overflow-y-auto pb-24 relative">
       <div class="w-full md:w-[70%] md:mx-auto">
         <div class="sticky top-0 z-10 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm pt-8 pb-3 px-4 md:px-0 border-b border-transparent dark:border-border-dark/50">
           <div class="mb-2">
@@ -120,7 +120,16 @@
       </div>
     </main>
 
-    <div class="fixed bottom-6 right-4 md:right-[15%] z-30 flex flex-col items-end gap-2">
+    <div class="fixed bottom-6 right-4 md:right-[15%] z-30 flex items-center gap-2">
+      <button
+        type="button"
+        class="h-12 w-12 rounded-full border border-slate-300 dark:border-border-dark bg-white/95 dark:bg-card-dark text-slate-700 dark:text-slate-200 shadow-lg shadow-slate-900/10 hover:bg-white dark:hover:bg-card-dark/80 transition-all active:scale-95 flex items-center justify-center"
+        [attr.aria-label]="'actions.scroll_top' | translate"
+        (click)="scrollToTop()"
+      >
+        <span class="material-symbols-outlined text-xl leading-none">arrow_upward</span>
+      </button>
+
       <button
         type="button"
         class="group flex items-center justify-center gap-2 bg-primary hover:bg-blue-600 text-white shadow-lg shadow-blue-900/20 rounded-full h-12 pl-4 pr-5 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
@@ -132,7 +141,9 @@
       </button>
 
       @if (exportError()) {
-        <p class="text-xs text-red-500 bg-white/90 dark:bg-card-dark px-2 py-1 rounded-md">{{ exportError() }}</p>
+        <p class="absolute right-0 -top-10 text-xs text-red-500 bg-white/90 dark:bg-card-dark px-2 py-1 rounded-md whitespace-nowrap">
+          {{ exportError() }}
+        </p>
       }
     </div>
   } @else {

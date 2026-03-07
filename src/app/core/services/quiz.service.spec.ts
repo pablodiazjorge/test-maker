@@ -50,6 +50,73 @@ describe('QuizService', () => {
     expect(service.getQuestionCountForTopic('tema-prueba-sin-hijos')).toBe(2);
   });
 
+  it('sorts setup topic groups and child topics alphabetically', () => {
+    const masterData = [
+      {
+        id: 'group-z',
+        name: 'Zeta Group',
+        description: 'Group with children',
+        children: [
+          {
+            id: 'topic-b',
+            name: 'Beta Topic',
+            description: 'b',
+            questions: [
+              {
+                id: 'q-b-1',
+                text: 'Q B1',
+                options: [
+                  { id: 'q-b-1-a', text: 'A' },
+                  { id: 'q-b-1-b', text: 'B' },
+                ],
+                correctOptionId: 'q-b-1-a',
+              },
+            ],
+          },
+          {
+            id: 'topic-a',
+            name: 'Alpha Topic',
+            description: 'a',
+            questions: [
+              {
+                id: 'q-a-1',
+                text: 'Q A1',
+                options: [
+                  { id: 'q-a-1-a', text: 'A' },
+                  { id: 'q-a-1-b', text: 'B' },
+                ],
+                correctOptionId: 'q-a-1-a',
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'group-a',
+        name: 'Alpha Group',
+        description: 'Standalone group',
+        questions: [
+          {
+            id: 'q-s-1',
+            text: 'Q S1',
+            options: [
+              { id: 'q-s-1-a', text: 'A' },
+              { id: 'q-s-1-b', text: 'B' },
+            ],
+            correctOptionId: 'q-s-1-a',
+          },
+        ],
+      },
+    ];
+
+    const loaded = service.setMasterData(masterData, 'alice');
+    expect(loaded).toBe(true);
+
+    expect(service.topicGroups.map((group) => group.name)).toEqual(['Alpha Group', 'Zeta Group']);
+    expect(service.topicGroups[1].children.map((topic) => topic.name)).toEqual(['Alpha Topic', 'Beta Topic']);
+    expect(service.topicGroups[1].topicIds).toEqual(['topic-a', 'topic-b']);
+  });
+
   it('fails when master data is empty', () => {
     const loaded = service.setMasterData([], 'alice');
 

@@ -18,6 +18,7 @@
     "switch_to_light_theme": "Cambiar a tema claro",
     "switch_to_dark_theme": "Cambiar a tema oscuro",
     "switch_language_to": "Cambiar idioma a {{language}}",
+    "scroll_top": "Subir arriba",
     "all": "Todas",
     "incorrect": "Incorrectas",
     "unanswered": "Sin responder"

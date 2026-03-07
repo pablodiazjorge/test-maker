@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, ElementRef, inject, OnInit, signal, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { Option, Question } from '../../core/data/quiz.data';
@@ -51,6 +51,7 @@ export class QuizResultsComponent implements OnInit {
   private readonly i18n = inject(I18nService);
   private readonly quizService = inject(QuizService);
   private readonly router = inject(Router);
+  @ViewChild('resultsScrollContainer') private readonly resultsScrollContainer?: ElementRef<HTMLElement>;
 
   readonly results = this.quizService.results;
   readonly questions = this.quizService.questions;
@@ -255,13 +256,21 @@ export class QuizResultsComponent implements OnInit {
 
     try {
       const pdf = new JsPDF('p', 'pt', 'a4');
-      const margin = 40;
+      const margin = 44;
+      const topMargin = 52;
+      const bottomMargin = 56;
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       const contentWidth = pageWidth - margin * 2;
       const lineHeight = 15;
       const exportedQuestions = this.filteredQuestions();
-      let y = 52;
+      let y = topMargin;
+      const ensurePageSpace = (requiredHeight: number): void => {
+        if (y + requiredHeight > pageHeight - bottomMargin) {
+          pdf.addPage();
+          y = topMargin;
+        }
+      };
 
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(20);
@@ -281,10 +290,7 @@ export class QuizResultsComponent implements OnInit {
 
       const summary = this.results();
       const summaryHeight = 88;
-      if (y + summaryHeight > pageHeight - margin) {
-        pdf.addPage();
-        y = margin;
-      }
+      ensurePageSpace(summaryHeight);
       pdf.setFillColor(248, 250, 252);
       pdf.setDrawColor(226, 232, 240);
       pdf.rect(margin, y, contentWidth, summaryHeight, 'FD');
@@ -312,13 +318,10 @@ export class QuizResultsComponent implements OnInit {
       for (const question of exportedQuestions) {
         const statusLabel = this.questionStatusLabel(question);
         const statusColor = this.questionStatusColor(question);
-        const questionTitlePrefix = `${this.i18n.t('runner.question_label', {
+        const questionTitle = `${this.i18n.t('runner.question_label', {
           number: this.questionNumber(question.id),
         })} - ${this.topicName(question.topicId)}`;
-        const questionTitleStatusText = ` - ${statusLabel}`;
-        const statusFitsInSameLine =
-          margin + pdf.getTextWidth(questionTitlePrefix) + pdf.getTextWidth(questionTitleStatusText) <=
-          pageWidth - margin;
+        const questionTitleLines = pdf.splitTextToSize(questionTitle, contentWidth);
         const questionLines = pdf.splitTextToSize(question.text, contentWidth);
         const optionGroups = question.options.map((option, index) => {
           const optionText = `${this.optionLetter(index)}) ${option.text}`;
@@ -329,73 +332,58 @@ export class QuizResultsComponent implements OnInit {
             markerText,
           };
         });
-        const optionsHeight =
+        const estimatedHeight =
+          questionTitleLines.length * lineHeight +
           lineHeight +
-          optionGroups.reduce(
-            (sum, group) => sum + group.lines.length * lineHeight + (group.markerText ? lineHeight : 0) + 4,
-            0,
-          );
-        const estimatedHeight = 34 + questionLines.length * lineHeight + 8 + optionsHeight + 14;
-        const estimatedHeightWithStatusWrap = estimatedHeight + (statusFitsInSameLine ? 0 : 16);
-
-        if (y + estimatedHeightWithStatusWrap > pageHeight - margin) {
-          pdf.addPage();
-          y = margin;
-        }
+          questionLines.length * lineHeight +
+          lineHeight +
+          optionGroups.reduce((sum, group) => sum + group.lines.length * lineHeight + (group.markerText ? lineHeight : 0) + 6, 0) +
+          16;
+        ensurePageSpace(estimatedHeight);
 
         pdf.setFont('helvetica', 'bold');
         pdf.setFontSize(12);
         pdf.setTextColor(15, 23, 42);
-        pdf.text(questionTitlePrefix, margin, y);
+        pdf.text(questionTitleLines, margin, y);
+        y += questionTitleLines.length * lineHeight;
+
         pdf.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
-        if (statusFitsInSameLine) {
-          pdf.text(questionTitleStatusText, margin + pdf.getTextWidth(questionTitlePrefix), y);
-          y += 18;
-        } else {
-          y += 16;
-          pdf.text(statusLabel, margin, y);
-          y += 16;
-        }
+        pdf.text(statusLabel, margin, y);
+        y += 16;
 
         pdf.setFont('helvetica', 'normal');
         pdf.setFontSize(11);
         pdf.setTextColor(30, 41, 59);
+        ensurePageSpace(questionLines.length * lineHeight + 8);
         pdf.text(questionLines, margin, y);
         y += questionLines.length * lineHeight + 4;
 
         pdf.setFontSize(10);
         pdf.setTextColor(100, 116, 139);
+        ensurePageSpace(lineHeight);
         pdf.text(this.i18n.t('pdf.options_label'), margin, y);
         y += lineHeight;
 
         for (const group of optionGroups) {
+          const groupHeight = group.lines.length * lineHeight + (group.markerText ? lineHeight : 0) + 4;
+          ensurePageSpace(groupHeight);
           pdf.setTextColor(51, 65, 85);
           pdf.text(group.lines, margin + 12, y);
-          let extraMarkerLineHeight = 0;
+          y += group.lines.length * lineHeight;
 
           if (group.markerText) {
             const markerColor = this.optionPdfColor(question, group.option);
-            const lastLine = group.lines[group.lines.length - 1] ?? '';
-            const markerLabel = group.markerText.trim();
-            const markerInlineX = margin + 12 + pdf.getTextWidth(`${lastLine} `);
-            const markerWidth = pdf.getTextWidth(markerLabel);
-            const markerFitsSameLine = markerInlineX + markerWidth <= pageWidth - margin;
-            const markerY = y + (group.lines.length - 1) * lineHeight;
-
             pdf.setFont('helvetica', 'bold');
             pdf.setTextColor(markerColor[0], markerColor[1], markerColor[2]);
-            if (markerFitsSameLine) {
-              pdf.text(markerLabel, markerInlineX, markerY);
-            } else {
-              pdf.text(markerLabel, margin + 20, markerY + lineHeight);
-              extraMarkerLineHeight = lineHeight;
-            }
+            pdf.text(group.markerText.trim(), margin + 20, y);
             pdf.setFont('helvetica', 'normal');
+            y += lineHeight;
           }
 
-          y += group.lines.length * lineHeight + extraMarkerLineHeight + 3;
+          y += 4;
         }
 
+        ensurePageSpace(14);
         pdf.setDrawColor(226, 232, 240);
         pdf.line(margin, y, pageWidth - margin, y);
         y += 14;
@@ -412,6 +400,15 @@ export class QuizResultsComponent implements OnInit {
   backToSetup(): void {
     this.quizService.resetQuiz();
     void this.router.navigate(['/config']);
+  }
+
+  scrollToTop(): void {
+    const container = this.resultsScrollContainer?.nativeElement;
+    if (container) {
+      container.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   private exportFilterLabel(): string {

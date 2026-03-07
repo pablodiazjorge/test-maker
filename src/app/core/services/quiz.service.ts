@@ -22,6 +22,7 @@ export interface QuizResults {
 @Injectable({ providedIn: 'root' })
 export class QuizService {
   private static readonly MASTER_DATA_CACHE_KEY_PREFIX = 'test-maker.master-data';
+  private static readonly NAME_COLLATOR = new Intl.Collator('es', { sensitivity: 'base', numeric: true });
 
   private topicsData: Topic[] = [];
   private topicGroupsData: TopicGroup[] = [];
@@ -472,7 +473,27 @@ export class QuizService {
       });
     }
 
-    return { topics, topicGroups, questions };
+    const sortedTopics = [...topics].sort((a, b) => QuizService.NAME_COLLATOR.compare(a.name, b.name));
+    const sortedTopicGroups = topicGroups
+      .map((group) => this.sortTopicGroupAlphabetically(group))
+      .sort((a, b) => QuizService.NAME_COLLATOR.compare(a.name, b.name));
+
+    return {
+      topics: sortedTopics,
+      topicGroups: sortedTopicGroups,
+      questions,
+    };
+  }
+
+  private sortTopicGroupAlphabetically(group: TopicGroup): TopicGroup {
+    const sortedChildren = [...group.children].sort((a, b) => QuizService.NAME_COLLATOR.compare(a.name, b.name));
+    const sortedTopicIds = sortedChildren.map((topic) => topic.id);
+
+    return {
+      ...group,
+      children: sortedChildren,
+      topicIds: sortedTopicIds,
+    };
   }
 
   private readChildTopics(topic: MasterTopic): MasterTopicChild[] {

@@ -208,7 +208,8 @@ describe('QuizResultsComponent', () => {
     expect(constructorMock).toHaveBeenCalled();
     expect(pdfMock.save).toHaveBeenCalledOnce();
     expect(i18n.t).toHaveBeenCalledWith('actions.incorrect');
-    expect(pdfMock.text).toHaveBeenCalledWith(' - status.incorrect', expect.any(Number), expect.any(Number));
+    expect(pdfMock.text).toHaveBeenCalledWith('status.incorrect', expect.any(Number), expect.any(Number));
+    expect(pdfMock.text).toHaveBeenCalledWith('pdf.elapsed_time', expect.any(Number), expect.any(Number));
     expect(component.exportError()).toBeNull();
     expect(component.isExporting()).toBe(false);
   });
