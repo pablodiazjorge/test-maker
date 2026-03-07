@@ -262,6 +262,7 @@ export class QuizResultsComponent implements OnInit {
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       const contentWidth = pageWidth - margin * 2;
+      const safeContentWidth = contentWidth - 8;
       const lineHeight = 15;
       const exportedQuestions = this.filteredQuestions();
       let y = topMargin;
@@ -271,22 +272,46 @@ export class QuizResultsComponent implements OnInit {
           y = topMargin;
         }
       };
+      const addGap = (height: number): void => {
+        ensurePageSpace(height);
+        y += height;
+      };
+      const writeLine = (text: string, x = margin, step = lineHeight): void => {
+        ensurePageSpace(step);
+        pdf.text(text, x, y);
+        y += step;
+      };
+      const writeWrapped = (text: string, maxWidth: number, x = margin, step = lineHeight): void => {
+        const normalizedText = String(text ?? '');
+        const lines = pdf.splitTextToSize(normalizedText, maxWidth);
+        if (!lines.length) {
+          ensurePageSpace(step);
+          y += step;
+          return;
+        }
+
+        for (const line of lines) {
+          ensurePageSpace(step);
+          pdf.text(line, x, y);
+          y += step;
+        }
+      };
 
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(20);
       pdf.setTextColor(15, 23, 42);
       pdf.text(this.i18n.t('pdf.report_title'), margin, y);
-      y += 24;
+      addGap(24);
 
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(10);
       pdf.setTextColor(100, 116, 139);
       pdf.text(this.i18n.t('pdf.generated', { value: new Date().toLocaleString() }), margin, y);
-      y += 14;
+      addGap(14);
       pdf.text(this.i18n.t('pdf.filter', { value: this.exportFilterLabel() }), margin, y);
-      y += 14;
+      addGap(14);
       pdf.text(this.i18n.t('pdf.elapsed_time', { value: this.elapsedTime() }), margin, y);
-      y += 20;
+      addGap(20);
 
       const summary = this.results();
       const summaryHeight = 88;
@@ -313,7 +338,7 @@ export class QuizResultsComponent implements OnInit {
       pdf.text(this.i18n.t('pdf.unanswered', { value: summary.unanswered }), margin + 330, y + 40);
       pdf.text(this.i18n.t('pdf.elapsed_time', { value: this.elapsedTime() }), margin + 12, y + 58);
       pdf.text(this.i18n.t('pdf.questions_exported', { value: exportedQuestions.length }), margin + 12, y + 74);
-      y += summaryHeight + 18;
+      addGap(summaryHeight + 18);
 
       for (const question of exportedQuestions) {
         const statusLabel = this.questionStatusLabel(question);
@@ -321,72 +346,53 @@ export class QuizResultsComponent implements OnInit {
         const questionTitle = `${this.i18n.t('runner.question_label', {
           number: this.questionNumber(question.id),
         })} - ${this.topicName(question.topicId)}`;
-        const questionTitleLines = pdf.splitTextToSize(questionTitle, contentWidth);
-        const questionLines = pdf.splitTextToSize(question.text, contentWidth);
         const optionGroups = question.options.map((option, index) => {
           const optionText = `${this.optionLetter(index)}) ${option.text}`;
           const markerText = this.optionPdfSuffix(question, option);
           return {
             option,
-            lines: pdf.splitTextToSize(optionText, contentWidth - 12),
+            optionText,
             markerText,
           };
         });
-        const estimatedHeight =
-          questionTitleLines.length * lineHeight +
-          lineHeight +
-          questionLines.length * lineHeight +
-          lineHeight +
-          optionGroups.reduce((sum, group) => sum + group.lines.length * lineHeight + (group.markerText ? lineHeight : 0) + 6, 0) +
-          16;
-        ensurePageSpace(estimatedHeight);
 
         pdf.setFont('helvetica', 'bold');
         pdf.setFontSize(12);
         pdf.setTextColor(15, 23, 42);
-        pdf.text(questionTitleLines, margin, y);
-        y += questionTitleLines.length * lineHeight;
+        writeWrapped(questionTitle, safeContentWidth, margin, lineHeight);
 
         pdf.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
-        pdf.text(statusLabel, margin, y);
-        y += 16;
+        writeLine(statusLabel, margin, 16);
 
         pdf.setFont('helvetica', 'normal');
         pdf.setFontSize(11);
         pdf.setTextColor(30, 41, 59);
-        ensurePageSpace(questionLines.length * lineHeight + 8);
-        pdf.text(questionLines, margin, y);
-        y += questionLines.length * lineHeight + 4;
+        writeWrapped(question.text, safeContentWidth, margin, lineHeight);
+        addGap(4);
 
         pdf.setFontSize(10);
         pdf.setTextColor(100, 116, 139);
-        ensurePageSpace(lineHeight);
-        pdf.text(this.i18n.t('pdf.options_label'), margin, y);
-        y += lineHeight;
+        writeLine(this.i18n.t('pdf.options_label'));
 
         for (const group of optionGroups) {
-          const groupHeight = group.lines.length * lineHeight + (group.markerText ? lineHeight : 0) + 4;
-          ensurePageSpace(groupHeight);
           pdf.setTextColor(51, 65, 85);
-          pdf.text(group.lines, margin + 12, y);
-          y += group.lines.length * lineHeight;
+          writeWrapped(group.optionText, safeContentWidth - 12, margin + 12, lineHeight);
 
           if (group.markerText) {
             const markerColor = this.optionPdfColor(question, group.option);
             pdf.setFont('helvetica', 'bold');
             pdf.setTextColor(markerColor[0], markerColor[1], markerColor[2]);
-            pdf.text(group.markerText.trim(), margin + 20, y);
+            writeWrapped(group.markerText.trim(), safeContentWidth - 20, margin + 20, lineHeight);
             pdf.setFont('helvetica', 'normal');
-            y += lineHeight;
           }
 
-          y += 4;
+          addGap(4);
         }
 
         ensurePageSpace(14);
         pdf.setDrawColor(226, 232, 240);
         pdf.line(margin, y, pageWidth - margin, y);
-        y += 14;
+        addGap(14);
       }
 
       pdf.save(this.buildPdfFileName());
@@ -405,9 +411,16 @@ export class QuizResultsComponent implements OnInit {
   scrollToTop(): void {
     const container = this.resultsScrollContainer?.nativeElement;
     if (container) {
+      container.scrollTop = 0;
       container.scrollTo({ top: 0, behavior: 'smooth' });
-      return;
     }
+
+    const scrollingElement = document.scrollingElement as HTMLElement | null;
+    if (scrollingElement) {
+      scrollingElement.scrollTop = 0;
+    }
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
