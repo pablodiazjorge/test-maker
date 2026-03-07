@@ -66,13 +66,13 @@ describe('QuizConfigComponent', () => {
     return TestBed.runInInjectionContext(() => new QuizConfigComponent());
   }
 
-  it('initializes with selected topic and max question count', () => {
+  it('initializes without preselected topics', () => {
     const component = createComponent();
     component.ngOnInit();
 
-    expect(component.selectedTopicIds).toEqual(['topic-1']);
-    expect(component.maxQuestionCount).toBe(2);
-    expect(component.questionCount).toBe(2);
+    expect(component.selectedTopicIds).toEqual([]);
+    expect(component.maxQuestionCount).toBe(0);
+    expect(component.questionCount).toBe(0);
     expect(component.topicGroups).toEqual(topicGroups);
   });
 
@@ -118,6 +118,7 @@ describe('QuizConfigComponent', () => {
   it('clamps numeric input based on selected pool', () => {
     const component = createComponent();
     component.ngOnInit();
+    component.onSelectedTopicIdsChange(['topic-1']);
 
     component.onQuestionCountChange(99);
     expect(component.questionCount).toBe(2);
@@ -126,6 +127,7 @@ describe('QuizConfigComponent', () => {
   it('sanitizes question count input and blur', () => {
     const component = createComponent();
     component.ngOnInit();
+    component.onSelectedTopicIdsChange(['topic-1']);
 
     const input = document.createElement('input');
     input.value = '999';

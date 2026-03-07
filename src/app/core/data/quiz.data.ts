@@ -61,5 +61,5 @@ export const DEFAULT_QUIZ_CONFIG: QuizConfig = {
   questionCount: 10,
   shuffleQuestions: true,
   shuffleAnswers: false,
-  selectedTopicIds: ['topic-1'],
+  selectedTopicIds: [],
 };

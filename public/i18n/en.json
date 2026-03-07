@@ -41,6 +41,7 @@
   },
   "runner": {
     "question_counter": "Question {{current}} / {{total}}",
+    "elapsed_time": "Elapsed: {{value}}",
     "question_label": "Question {{number}}",
     "current_suffix": "(Current)",
     "no_active_session_title": "No active quiz session",
@@ -49,6 +50,7 @@
   "results": {
     "title": "Results Review",
     "score_line": "Score: {{score}}/10",
+    "elapsed_time": "Total time: {{value}}",
     "summary_correct": "Correct",
     "summary_incorrect": "Incorrect",
     "summary_unanswered": "Unanswered",
@@ -77,6 +79,7 @@
     "report_title": "Quiz Results Report",
     "generated": "Generated: {{value}}",
     "filter": "Filter: {{value}}",
+    "elapsed_time": "Total time: {{value}}",
     "score": "Score: {{score}}/10",
     "answered": "Answered: {{value}}",
     "correct": "Correct: {{value}}",

@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { QuizService } from './quiz.service';
 import { createMasterTopicGroupsFixture, createMasterTopicsFixture } from './quiz.service.fixtures';
 
@@ -185,6 +185,35 @@ describe('QuizService', () => {
     expect(results.correct).toBe(3);
     expect(results.incorrect).toBe(3);
     expect(results.score).toBe(3.33); // (3 - floor(3/3)) * (10/6) = 3.33
+  });
+
+  it('tracks elapsed time from quiz start to finish', () => {
+    const nowSpy = vi.spyOn(Date, 'now');
+
+    try {
+      service.setMasterData(createMasterTopicsFixture(), 'alice');
+
+      nowSpy.mockReturnValue(1_000);
+      service.startQuiz({
+        questionCount: 2,
+        shuffleQuestions: false,
+        shuffleAnswers: false,
+        selectedTopicIds: ['topic-1'],
+      });
+
+      nowSpy.mockReturnValue(4_400);
+      expect(service.getElapsedSeconds()).toBe(3);
+      expect(service.formatElapsedTime(service.getElapsedSeconds())).toBe('00:00:03');
+
+      nowSpy.mockReturnValue(6_900);
+      service.finishQuiz();
+
+      nowSpy.mockReturnValue(20_000);
+      expect(service.getElapsedSeconds()).toBe(5);
+      expect(service.elapsedTime()).toBe('00:00:05');
+    } finally {
+      nowSpy.mockRestore();
+    }
   });
 
   it('restores cached master data for an existing user', () => {

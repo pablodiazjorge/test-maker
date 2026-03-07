@@ -55,6 +55,8 @@ describe('QuizResultsComponent', () => {
   const quizService = {
     results: vi.fn(() => results),
     questions: vi.fn(() => questions),
+    elapsedTime: vi.fn(() => '00:01:23'),
+    finishQuiz: vi.fn(),
     topics: [
       { id: 'topic-1', name: 'HTML', description: 'desc' },
       { id: 'topic-2', name: 'CSS', description: 'desc' },
@@ -99,6 +101,12 @@ describe('QuizResultsComponent', () => {
     const component = createComponent();
     expect(component.questionNumber('q-1')).toBe(1);
     expect(component.questionNumber('q-3')).toBe(3);
+  });
+
+  it('marks quiz as finished on init', () => {
+    const component = createComponent();
+    component.ngOnInit();
+    expect(quizService.finishQuiz).toHaveBeenCalled();
   });
 
   it('resolves topic names by topic id', () => {

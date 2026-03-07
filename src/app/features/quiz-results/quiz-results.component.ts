@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { Option, Question } from '../../core/data/quiz.data';
@@ -47,13 +47,14 @@ declare global {
   imports: [EmptyStateComponent, TranslateModule],
   templateUrl: './quiz-results.component.html',
 })
-export class QuizResultsComponent {
+export class QuizResultsComponent implements OnInit {
   private readonly i18n = inject(I18nService);
   private readonly quizService = inject(QuizService);
   private readonly router = inject(Router);
 
   readonly results = this.quizService.results;
   readonly questions = this.quizService.questions;
+  readonly elapsedTime = this.quizService.elapsedTime;
 
   readonly filter = signal<ResultsFilter>('all');
   readonly isExporting = signal(false);
@@ -78,6 +79,10 @@ export class QuizResultsComponent {
     });
     return order;
   });
+
+  ngOnInit(): void {
+    this.quizService.finishQuiz();
+  }
 
   setFilter(filter: ResultsFilter): void {
     this.filter.set(filter);
@@ -270,10 +275,12 @@ export class QuizResultsComponent {
       pdf.text(this.i18n.t('pdf.generated', { value: new Date().toLocaleString() }), margin, y);
       y += 14;
       pdf.text(this.i18n.t('pdf.filter', { value: this.exportFilterLabel() }), margin, y);
+      y += 14;
+      pdf.text(this.i18n.t('pdf.elapsed_time', { value: this.elapsedTime() }), margin, y);
       y += 20;
 
       const summary = this.results();
-      const summaryHeight = 74;
+      const summaryHeight = 88;
       if (y + summaryHeight > pageHeight - margin) {
         pdf.addPage();
         y = margin;
@@ -298,7 +305,8 @@ export class QuizResultsComponent {
       pdf.text(this.i18n.t('pdf.correct', { value: summary.correct }), margin + 126, y + 40);
       pdf.text(this.i18n.t('pdf.incorrect', { value: summary.incorrect }), margin + 220, y + 40);
       pdf.text(this.i18n.t('pdf.unanswered', { value: summary.unanswered }), margin + 330, y + 40);
-      pdf.text(this.i18n.t('pdf.questions_exported', { value: exportedQuestions.length }), margin + 12, y + 58);
+      pdf.text(this.i18n.t('pdf.elapsed_time', { value: this.elapsedTime() }), margin + 12, y + 58);
+      pdf.text(this.i18n.t('pdf.questions_exported', { value: exportedQuestions.length }), margin + 12, y + 74);
       y += summaryHeight + 18;
 
       for (const question of exportedQuestions) {

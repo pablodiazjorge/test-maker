@@ -48,6 +48,9 @@ describe('QuizRunnerComponent', () => {
     goToQuestion: vi.fn(),
     previousQuestion: vi.fn(),
     nextQuestion: vi.fn(),
+    finishQuiz: vi.fn(),
+    getElapsedSeconds: vi.fn(() => 0),
+    formatElapsedTime: vi.fn(() => '00:00:00'),
     resetQuiz: vi.fn(),
   };
 
@@ -90,6 +93,7 @@ describe('QuizRunnerComponent', () => {
 
     component.continueQuiz();
 
+    expect(quizService.finishQuiz).toHaveBeenCalled();
     expect(router.navigate).toHaveBeenCalledWith(['/results']);
   });
 
@@ -197,6 +201,7 @@ describe('QuizRunnerComponent', () => {
     const component = createComponent();
 
     component.finishQuiz();
+    expect(quizService.finishQuiz).toHaveBeenCalled();
     expect(router.navigate).toHaveBeenCalledWith(['/results']);
 
     component.restart();

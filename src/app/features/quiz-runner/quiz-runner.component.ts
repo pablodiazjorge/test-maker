@@ -1,4 +1,4 @@
-import { Component, computed, HostListener, inject } from '@angular/core';
+import { Component, computed, HostListener, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
@@ -12,9 +12,11 @@ import { EmptyStateComponent } from '../../shared/components/empty-state/empty-s
   imports: [FormsModule, EmptyStateComponent, TranslateModule],
   templateUrl: './quiz-runner.component.html',
 })
-export class QuizRunnerComponent {
+export class QuizRunnerComponent implements OnInit, OnDestroy {
   private readonly quizService = inject(QuizService);
   private readonly router = inject(Router);
+  private readonly nowTimestamp = signal(Date.now());
+  private updateTimerId: ReturnType<typeof setInterval> | null = null;
 
   readonly questions = this.quizService.questions;
   readonly currentQuestion = this.quizService.currentQuestion;
@@ -25,6 +27,22 @@ export class QuizRunnerComponent {
     const total = this.totalQuestions();
     return total > 0 && this.currentIndex() === total - 1;
   });
+  readonly elapsedTime = computed(() =>
+    this.quizService.formatElapsedTime(this.quizService.getElapsedSeconds(this.nowTimestamp())),
+  );
+
+  ngOnInit(): void {
+    this.updateTimerId = setInterval(() => {
+      this.nowTimestamp.set(Date.now());
+    }, 1000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.updateTimerId) {
+      clearInterval(this.updateTimerId);
+      this.updateTimerId = null;
+    }
+  }
 
   selectAnswer(questionId: string, optionId: string): void {
     this.quizService.selectAnswer(questionId, optionId);
@@ -49,6 +67,7 @@ export class QuizRunnerComponent {
 
   continueQuiz(): void {
     if (this.isLastQuestion()) {
+      this.quizService.finishQuiz();
       void this.router.navigate(['/results']);
       return;
     }
@@ -56,6 +75,7 @@ export class QuizRunnerComponent {
   }
 
   finishQuiz(): void {
+    this.quizService.finishQuiz();
     void this.router.navigate(['/results']);
   }
 

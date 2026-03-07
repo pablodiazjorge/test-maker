@@ -41,6 +41,7 @@
   },
   "runner": {
     "question_counter": "Pregunta {{current}} / {{total}}",
+    "elapsed_time": "Tiempo: {{value}}",
     "question_label": "Pregunta {{number}}",
     "current_suffix": "(Actual)",
     "no_active_session_title": "No hay una sesión activa",
@@ -49,6 +50,7 @@
   "results": {
     "title": "Revisión de resultados",
     "score_line": "Puntuación: {{score}}/10",
+    "elapsed_time": "Tiempo total: {{value}}",
     "summary_correct": "Acertadas",
     "summary_incorrect": "Falladas",
     "summary_unanswered": "Sin responder",
@@ -77,6 +79,7 @@
     "report_title": "Informe de resultados del test",
     "generated": "Generado: {{value}}",
     "filter": "Filtro: {{value}}",
+    "elapsed_time": "Tiempo total: {{value}}",
     "score": "Puntuación: {{score}}/10",
     "answered": "Respondidas: {{value}}",
     "correct": "Correctas: {{value}}",

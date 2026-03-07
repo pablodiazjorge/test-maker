@@ -9,9 +9,14 @@
             <h1 class="text-3xl font-bold tracking-tight dark:text-white">{{ 'results.title' | translate }}</h1>
           </div>
           <div class="flex items-center justify-between mb-4">
-            <p class="text-sm text-slate-500 dark:text-slate-400">
-              {{ 'results.score_line' | translate: { score: results().score, correct: results().correct, total: results().total } }}
-            </p>
+            <div class="flex flex-col">
+              <p class="text-sm text-slate-500 dark:text-slate-400">
+                {{ 'results.score_line' | translate: { score: results().score, correct: results().correct, total: results().total } }}
+              </p>
+              <p class="text-xs text-slate-500 dark:text-slate-400">
+                {{ 'results.elapsed_time' | translate: { value: elapsedTime() } }}
+              </p>
+            </div>
             <button
               type="button"
               class="h-10 px-4 rounded-full border border-slate-300 dark:border-border-dark bg-white/90 dark:bg-card-dark text-slate-700 dark:text-slate-200 text-xs font-medium hover:bg-white dark:hover:bg-card-dark/80 transition-colors whitespace-nowrap"

@@ -32,6 +32,8 @@ export class QuizService {
   private readonly _config = signal<QuizConfig>({ ...DEFAULT_QUIZ_CONFIG });
   private readonly _questions = signal<Question[]>([]);
   private readonly _currentIndex = signal(0);
+  private readonly _quizStartedAt = signal<number | null>(null);
+  private readonly _quizFinishedAt = signal<number | null>(null);
   private readonly _isDataLoaded = signal(false);
   private readonly _isDataLoading = signal(false);
   private readonly _dataLoadError = signal<string | null>(null);
@@ -47,10 +49,14 @@ export class QuizService {
   readonly config = computed(() => this._config());
   readonly questions = computed(() => this._questions());
   readonly currentIndex = computed(() => this._currentIndex());
+  readonly quizStartedAt = computed(() => this._quizStartedAt());
+  readonly quizFinishedAt = computed(() => this._quizFinishedAt());
   readonly totalQuestions = computed(() => this._questions().length);
   readonly isDataLoaded = computed(() => this._isDataLoaded());
   readonly isDataLoading = computed(() => this._isDataLoading());
   readonly dataLoadError = computed(() => this._dataLoadError());
+  readonly elapsedSeconds = computed(() => this.getElapsedSeconds());
+  readonly elapsedTime = computed(() => this.formatElapsedTime(this.elapsedSeconds()));
 
   readonly currentQuestion = computed(() => {
     const questions = this._questions();
@@ -181,6 +187,8 @@ export class QuizService {
     this.questionCountByTopicId = new Map<string, number>();
     this._questions.set([]);
     this._currentIndex.set(0);
+    this._quizStartedAt.set(null);
+    this._quizFinishedAt.set(null);
     this._isDataLoaded.set(false);
     this._isDataLoading.set(false);
     this._dataLoadError.set(null);
@@ -195,6 +203,8 @@ export class QuizService {
     if (!this._isDataLoaded() || !this.allQuestions.length) {
       this._questions.set([]);
       this._currentIndex.set(0);
+      this._quizStartedAt.set(null);
+      this._quizFinishedAt.set(null);
       return;
     }
 
@@ -218,6 +228,8 @@ export class QuizService {
       });
       this._questions.set([]);
       this._currentIndex.set(0);
+      this._quizStartedAt.set(null);
+      this._quizFinishedAt.set(null);
       return;
     }
 
@@ -240,12 +252,45 @@ export class QuizService {
     this._config.set(sanitizedConfig);
     this._questions.set(withRandomizedOptions);
     this._currentIndex.set(0);
+    this._quizStartedAt.set(Date.now());
+    this._quizFinishedAt.set(null);
   }
 
   resetQuiz(): void {
     this._questions.set([]);
     this._currentIndex.set(0);
+    this._quizStartedAt.set(null);
+    this._quizFinishedAt.set(null);
     this._config.set({ ...DEFAULT_QUIZ_CONFIG });
+  }
+
+  finishQuiz(): void {
+    if (!this._questions().length || !this._quizStartedAt() || this._quizFinishedAt()) {
+      return;
+    }
+    this._quizFinishedAt.set(Date.now());
+  }
+
+  getElapsedSeconds(atTimestamp = Date.now()): number {
+    const startedAt = this._quizStartedAt();
+    if (!startedAt) {
+      return 0;
+    }
+
+    const finishedAt = this._quizFinishedAt();
+    const endTimestamp = finishedAt ?? atTimestamp;
+    return Math.max(0, Math.floor((endTimestamp - startedAt) / 1000));
+  }
+
+  formatElapsedTime(totalSeconds: number): string {
+    const normalizedSeconds = Math.max(0, Math.floor(totalSeconds));
+    const hours = Math.floor(normalizedSeconds / 3600);
+    const minutes = Math.floor((normalizedSeconds % 3600) / 60);
+    const seconds = normalizedSeconds % 60;
+
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds
+      .toString()
+      .padStart(2, '0')}`;
   }
 
   selectAnswer(questionId: string, optionId: string): void {

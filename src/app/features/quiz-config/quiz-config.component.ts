@@ -46,10 +46,6 @@ export class QuizConfigComponent implements OnInit {
     const availableTopicIds = new Set(this.quizService.topics.map((topic) => topic.id));
     this.selectedTopicIds = this.selectedTopicIds.filter((topicId) => availableTopicIds.has(topicId));
 
-    if (!this.selectedTopicIds.length && this.quizService.topics.length) {
-      this.selectedTopicIds = [this.quizService.topics[0].id];
-    }
-
     this.questionCount = this.maxQuestionCount;
     this.syncQuestionCountWithSelection();
   }
