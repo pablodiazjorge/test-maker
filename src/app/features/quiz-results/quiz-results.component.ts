@@ -304,37 +304,41 @@ export class QuizResultsComponent implements OnInit {
         x = margin,
         step = lineHeight,
       ): void => {
-        const combined = `${title} - ${status}`;
-        const lines = pdf.splitTextToSize(combined, maxWidth);
-        if (!lines.length) {
+        const titleLines = pdf.splitTextToSize(String(title ?? ''), maxWidth);
+        if (!titleLines.length) {
           ensurePageSpace(step);
           y += step;
           return;
         }
 
-        let statusX = x;
-        let statusY = y;
-        let canHighlightStatus = false;
-
-        for (const [index, line] of lines.entries()) {
+        for (let i = 0; i < titleLines.length; i++) {
+          const line = titleLines[i];
           ensurePageSpace(step);
           pdf.setTextColor(15, 23, 42);
           pdf.text(line, x, y);
-
-          if (index === lines.length - 1 && line.endsWith(status)) {
-            const prefix = line.slice(0, line.length - status.length);
-            statusX = x + pdf.getTextWidth(prefix);
-            statusY = y;
-            canHighlightStatus = true;
-          }
-
           y += step;
         }
 
-        if (canHighlightStatus) {
+        const lastLine = titleLines[titleLines.length - 1] ?? '';
+        const lastLineY = y - step;
+        const lastLineWidth = pdf.getTextWidth(lastLine);
+        const separator = ' - ';
+        const separatorWidth = pdf.getTextWidth(separator);
+        const statusWidth = pdf.getTextWidth(status);
+        const fitsInline = lastLineWidth + separatorWidth + statusWidth <= maxWidth;
+
+        if (fitsInline) {
+          pdf.setTextColor(15, 23, 42);
+          pdf.text(separator, x + lastLineWidth, lastLineY);
           pdf.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
-          pdf.text(status, statusX, statusY);
+          pdf.text(status, x + lastLineWidth + separatorWidth, lastLineY);
+          return;
         }
+
+        ensurePageSpace(step);
+        pdf.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
+        pdf.text(status, x, y);
+        y += step;
       };
 
       pdf.setFont('helvetica', 'bold');
