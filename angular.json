@@ -41,7 +41,6 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "baseHref": "/test-maker/",
             "outputPath": "dist/test-maker",
             "index": "src/index.html",
             "browser": "src/main.ts",
@@ -63,6 +62,7 @@
           },
           "configurations": {
             "production": {
+              "baseHref": "/test-maker/",
               "budgets": [
                 {
                   "type": "initial",
@@ -88,7 +88,6 @@
         "build-unit-test": {
           "builder": "@angular/build:application",
           "options": {
-            "baseHref": "/test-maker/",
             "outputPath": "dist/test-maker",
             "index": "src/index.html",
             "browser": "src/main.ts",
@@ -110,6 +109,7 @@
           },
           "configurations": {
             "production": {
+              "baseHref": "/test-maker/",
               "budgets": [
                 {
                   "type": "initial",

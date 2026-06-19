@@ -3,6 +3,7 @@
   "framework": "angular",
 
   "rewrites": [
+    { "source": "/test-maker/:path*", "destination": "/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
 
