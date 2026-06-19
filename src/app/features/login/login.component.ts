@@ -53,6 +53,8 @@ export class LoginComponent {
     this.password.set(input?.value ?? '');
   }
 
+  // Demo guest credentials — intentionally public for portfolio review.
+  // In production, these would be injected via environment variables.
   useGuestCredentials(): void {
     this.username.set('invitado');
     this.password.set('invcont123');

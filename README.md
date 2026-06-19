@@ -4,6 +4,25 @@ TestMaker is a secure, session-aware exam platform built with Angular 21 (standa
 
 Current framework baseline: Angular `21.1.x` (core `21.1.5`, CLI `21.1.4`).
 
+## Why I Built This
+
+I needed a study tool where I could store exam questions securely without them
+being trivially shared or leaked. Existing quiz apps either required accounts,
+stored data on external servers, or offered no encryption at all.
+
+TestMaker solves this: question banks are encrypted with AES-256-CBC before
+storage, decrypted on-the-fly by a serverless API, and never exposed in plaintext
+on any server. The app itself is a static Angular SPA — no backend database, no
+user accounts beyond the configured credentials.
+
+## Development Approach
+
+This project was built as part of my AI Engineering workflow. I used Claude Code
+for scaffolding, debugging, and test generation, and MCP for integrations. The
+architecture, auth logic, encryption design, and test scenarios were defined and
+supervised by me personally. AI accelerated repetitive tasks and documentation,
+but every design decision was intentional and human-reviewed.
+
 ## What Makes This Project Different
 - Multi-user protected access backed by a serverless API (`/api/get-data`).
 - Per-user encrypted question banks fetched remotely and decrypted on demand.
@@ -115,3 +134,7 @@ Optional:
 - `src/app/features/quiz-runner` - Runtime exam interaction.
 - `src/app/features/quiz-results` - Review, filtering, and PDF reporting.
 - `src/app/shared/components/language-toggle-button` - Reusable EN/ES language switch control.
+
+## License
+
+This project's code is licensed under the [MIT License](LICENSE).
