@@ -9,11 +9,11 @@ describe('QuizService', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({});
     service = TestBed.inject(QuizService);
-    localStorage.clear();
+    sessionStorage.clear();
   });
 
   afterEach(() => {
-    localStorage.clear();
+    sessionStorage.clear();
   });
 
   it('loads and normalizes master data', () => {
@@ -281,6 +281,13 @@ describe('QuizService', () => {
     } finally {
       nowSpy.mockRestore();
     }
+  });
+
+  it('caches the decrypted bank in sessionStorage, not in localStorage', () => {
+    service.setMasterData(createMasterTopicsFixture(), 'alice');
+
+    expect(sessionStorage.getItem('test-maker.master-data.alice.v1')).not.toBeNull();
+    expect(localStorage.getItem('test-maker.master-data.alice.v1')).toBeNull();
   });
 
   it('restores cached master data for an existing user', () => {

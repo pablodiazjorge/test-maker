@@ -21,4 +21,18 @@ describe('AppComponent', () => {
     expect(i18nService.initializeLanguage).toHaveBeenCalledOnce();
     expect(themeService.initializeTheme).toHaveBeenCalledOnce();
   });
+
+  it('removes the cache that earlier versions left in localStorage', () => {
+    localStorage.setItem('test-maker.master-data.alice.v1', '{}');
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: I18nService, useValue: { initializeLanguage: vi.fn() } },
+        { provide: ThemeService, useValue: { initializeTheme: vi.fn() } },
+      ],
+    });
+
+    TestBed.runInInjectionContext(() => new AppComponent());
+
+    expect(localStorage.getItem('test-maker.master-data.alice.v1')).toBeNull();
+  });
 });

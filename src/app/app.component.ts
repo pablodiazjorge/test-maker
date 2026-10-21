@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { I18nService } from './core/services/i18n.service';
 import { ThemeService } from './core/services/theme.service';
+import { purgeLegacyLocalCache } from './core/state/browser-cache';
 
 @Component({
   selector: 'app-root',
@@ -16,6 +17,7 @@ export class AppComponent {
   private readonly themeService = inject(ThemeService);
 
   constructor() {
+    purgeLegacyLocalCache();
     this.i18nService.initializeLanguage();
     this.themeService.initializeTheme();
   }
