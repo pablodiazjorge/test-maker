@@ -27,10 +27,27 @@ interface VercelResponseLike {
 
 interface UserDatasetConfig {
   userId: string;
-  password: string;
+  passwordHash: string;
   decryptKey: string;
   encryptedJsonUrl: string;
 }
+
+interface ParsedPasswordHash {
+  salt: Buffer;
+  hash: Buffer;
+}
+
+// Passwords are checked against APP_USER_<n>_PASSWORD_HASH, in the format
+// `scrypt$<salt-base64>$<hash-base64>`, produced by scripts/hash-password.mjs with Node's scrypt
+// defaults (N = 16384, r = 8, p = 1), a random 16-byte salt and a 32-byte key.
+// Quote the value in local .env files: some loaders expand `$`.
+const SCRYPT_KEY_LENGTH = 32;
+const SCRYPT_MIN_SALT_LENGTH = 16;
+// Unknown users are checked against this hash, so they cost the same scrypt run and always fail.
+const DUMMY_PASSWORD_HASH: ParsedPasswordHash = {
+  salt: Buffer.alloc(SCRYPT_MIN_SALT_LENGTH),
+  hash: Buffer.alloc(SCRYPT_KEY_LENGTH),
+};
 
 export default async function handler(req: VercelRequestLike, res: VercelResponseLike): Promise<void> {
   res.setHeader('Cache-Control', 'no-store');
@@ -55,7 +72,9 @@ export default async function handler(req: VercelRequestLike, res: VercelRespons
     }
 
     const selectedUser = userConfigs.find((user) => user.userId.toLowerCase() === username.toLowerCase()) ?? null;
-    if (!selectedUser || password !== selectedUser.password) {
+    // Runs scrypt even when the user does not exist, so both cases take the same time.
+    const passwordMatches = verifyPassword(password, selectedUser?.passwordHash);
+    if (!selectedUser || !passwordMatches) {
       res.status(401).json({ error: 'Invalid credentials' });
       return;
     }
@@ -95,22 +114,57 @@ function parseRequestBody(rawBody: unknown): JsonRecord {
   return {};
 }
 
+export function parsePasswordHash(stored: string): ParsedPasswordHash | null {
+  const parts = stored.trim().split('$');
+  if (parts.length !== 3 || parts[0] !== 'scrypt' || !parts[1] || !parts[2]) {
+    return null;
+  }
+
+  const salt = Buffer.from(parts[1], 'base64');
+  const hash = Buffer.from(parts[2], 'base64');
+  // Anything but a 32-byte hash (a value that decodes to 0 bytes, say) is rejected here, before timingSafeEqual.
+  if (salt.length < SCRYPT_MIN_SALT_LENGTH || hash.length !== SCRYPT_KEY_LENGTH) {
+    return null;
+  }
+
+  return { salt, hash };
+}
+
+// Constant-time check of a password against a stored scrypt hash. A missing or malformed hash
+// still costs one scrypt run, against the dummy hash, and never matches.
+export function verifyPassword(candidate: string, stored: string | undefined): boolean {
+  const parsed = stored === undefined ? null : parsePasswordHash(stored);
+  const target = parsed ?? DUMMY_PASSWORD_HASH;
+  const actual = crypto.scryptSync(candidate, target.salt, SCRYPT_KEY_LENGTH);
+  return crypto.timingSafeEqual(actual, target.hash) && parsed !== null;
+}
+
 function readUserConfigsFromEnv(): UserDatasetConfig[] {
   const entries: UserDatasetConfig[] = [];
 
   for (const index of ['1', '2', '3']) {
-    const userId = (process.env[`APP_USER_${index}_USERNAME`] ?? '').trim();
-    const password = process.env[`APP_USER_${index}_PASSWORD`] ?? '';
-    const decryptKey = process.env[`APP_USER_${index}_DECRYPT_KEY`] ?? '';
-    const encryptedJsonUrl = (process.env[`APP_USER_${index}_JSON_URL`] ?? '').trim();
+    const prefix = `APP_USER_${index}`;
+    const userId = (process.env[`${prefix}_USERNAME`] ?? '').trim();
+    const passwordHash = (process.env[`${prefix}_PASSWORD_HASH`] ?? '').trim();
+    const decryptKey = process.env[`${prefix}_DECRYPT_KEY`] ?? '';
+    const encryptedJsonUrl = (process.env[`${prefix}_JSON_URL`] ?? '').trim();
 
-    if (!userId || !password || !decryptKey || !encryptedJsonUrl) {
+    if (`${prefix}_PASSWORD` in process.env) {
+      console.warn(`${prefix}_PASSWORD is ignored: passwords are checked against ${prefix}_PASSWORD_HASH. Remove it.`);
+    }
+
+    if (!userId || !decryptKey || !encryptedJsonUrl) {
+      continue;
+    }
+
+    if (!parsePasswordHash(passwordHash)) {
+      console.error(`${prefix} is disabled: ${prefix}_PASSWORD_HASH is missing or is not scrypt$<salt>$<hash>.`);
       continue;
     }
 
     entries.push({
       userId,
-      password,
+      passwordHash,
       decryptKey,
       encryptedJsonUrl,
     });
