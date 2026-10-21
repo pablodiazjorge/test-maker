@@ -175,4 +175,56 @@ describe('POST /api/get-data', () => {
 
     expect(response.statusCode).toBe(405);
   });
+
+  describe('when something fails after the login', () => {
+    function loggedErrors(): string {
+      return JSON.stringify(vi.mocked(console.error).mock.calls);
+    }
+
+    it('answers a bare 500 and logs no plaintext when the decrypted bank is not JSON', async () => {
+      configureUser('1', 'alice', scryptHash(PASSWORD));
+      fetchMock.mockResolvedValue(new Response(encryptBank('not json: SECRET QUESTION TEXT', decryptKey)));
+
+      const response = await login('alice', PASSWORD);
+
+      expect(response.statusCode).toBe(500);
+      expect(response.body).toStrictEqual({ error: 'Internal server error' });
+      expect(loggedErrors()).toContain('Decrypted payload is not valid JSON');
+      expect(loggedErrors()).not.toContain('SECRET QUESTION TEXT');
+    });
+
+    it('logs only the name of unexpected errors, whose message can quote the dataset URL', async () => {
+      configureUser('1', 'alice', scryptHash(PASSWORD));
+      fetchMock.mockRejectedValue(new TypeError('Failed to parse URL from https://example.invalid/?token=abc123'));
+
+      const response = await login('alice', PASSWORD);
+
+      expect(response.statusCode).toBe(500);
+      expect(response.body).toStrictEqual({ error: 'Internal server error' });
+      expect(loggedErrors()).toContain('TypeError');
+      expect(loggedErrors()).not.toContain('abc123');
+    });
+
+    it('logs the fixed message of its own errors', async () => {
+      configureUser('1', 'alice', scryptHash(PASSWORD));
+      fetchMock.mockResolvedValue(new Response('Not Found', { status: 404 }));
+
+      const response = await login('alice', PASSWORD);
+
+      expect(response.statusCode).toBe(500);
+      expect(response.body).toStrictEqual({ error: 'Internal server error' });
+      expect(loggedErrors()).toContain('Error downloading from GitHub: 404');
+    });
+
+    it('logs the error code of a wrong decryption key without returning it', async () => {
+      configureUser('1', 'alice', scryptHash(PASSWORD));
+      vi.stubEnv('APP_USER_1_DECRYPT_KEY', randomBytes(32).toString('hex'));
+
+      const response = await login('alice', PASSWORD);
+
+      expect(response.statusCode).toBe(500);
+      expect(response.body).toStrictEqual({ error: 'Internal server error' });
+      expect(loggedErrors()).toMatch(/get-data failed: \w+/);
+    });
+  });
 });

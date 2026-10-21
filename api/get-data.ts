@@ -84,13 +84,30 @@ export default async function handler(req: VercelRequestLike, res: VercelRespons
     const decrypted = decryptPayload(encryptedRawData, selectedUser.decryptKey);
     res.status(200).json({ userId: selectedUser.userId, data: decrypted });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('API crash:', error);
-    res.status(500).json({
-      error: 'Internal server error',
-      details: message,
-    });
+    // The client only learns that something failed; the cause goes to the server log.
+    console.error(`get-data failed: ${describeError(error)}`);
+    res.status(500).json({ error: 'Internal server error' });
   }
+}
+
+// Errors thrown by this module carry fixed messages that are safe to log. Any other error is logged
+// by name and code only: JSON.parse quotes part of its input (here it can be the decrypted bank)
+// and fetch can quote the dataset URL.
+class SafeError extends Error {}
+
+function describeError(error: unknown): string {
+  if (error instanceof SafeError) {
+    return error.message;
+  }
+
+  if (!(error instanceof Error)) {
+    return 'non-Error value thrown';
+  }
+
+  const codes = [error, error.cause]
+    .map((item) => (item as { code?: unknown } | undefined)?.code)
+    .filter((code): code is string => typeof code === 'string');
+  return codes.length ? `${error.name} (${codes.join(', ')})` : error.name;
 }
 
 function parseRequestBody(rawBody: unknown): JsonRecord {
@@ -183,14 +200,14 @@ async function fetchEncryptedPayload(url: string, token: string): Promise<string
   });
 
   if (!response.ok) {
-    throw new Error(`Error downloading from GitHub: ${response.status}`);
+    throw new SafeError(`Error downloading from GitHub: ${response.status}`);
   }
 
   const contentType = response.headers.get('content-type') ?? '';
   const payload = await response.text();
 
   if (looksLikeHtmlPayload(payload, contentType)) {
-    throw new Error('GitHub URL returned HTML, not encrypted content. Use raw file URL.');
+    throw new SafeError('GitHub URL returned HTML, not encrypted content. Use raw file URL.');
   }
 
   return payload;
@@ -201,7 +218,11 @@ function decryptPayload(payload: string, keySource: string): unknown {
   const { iv, data } = parseEncryptedPayload(payload);
   const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
   const decrypted = Buffer.concat([decipher.update(data), decipher.final()]).toString('utf8');
-  return JSON.parse(decrypted) as unknown;
+  try {
+    return JSON.parse(decrypted) as unknown;
+  } catch {
+    throw new SafeError('Decrypted payload is not valid JSON');
+  }
 }
 
 function parseEncryptedPayload(payload: string): { iv: Buffer; data: Buffer } {
@@ -214,22 +235,27 @@ function parseEncryptedPayload(payload: string): { iv: Buffer; data: Buffer } {
 function parseRawEncryptedPayload(payload: string): EncryptedPayload {
   const trimmedPayload = payload.trim();
   if (!trimmedPayload) {
-    throw new Error('Encrypted payload is empty');
+    throw new SafeError('Encrypted payload is empty');
   }
 
   if (looksLikeHtmlPayload(trimmedPayload, '')) {
-    throw new Error('Encrypted payload appears to be HTML. Check GITHUB_ENCRYPTED_JSON_URL.');
+    throw new SafeError('Encrypted payload appears to be HTML. Check GITHUB_ENCRYPTED_JSON_URL.');
   }
 
   if (trimmedPayload.startsWith('{')) {
-    const parsed = JSON.parse(trimmedPayload) as JsonRecord;
+    let parsed: JsonRecord;
+    try {
+      parsed = JSON.parse(trimmedPayload) as JsonRecord;
+    } catch {
+      throw new SafeError('Encrypted payload is not valid JSON');
+    }
     const ivCandidate = parsed['iv'];
     const dataCandidate = parsed['data'] ?? parsed['content'] ?? parsed['ciphertext'];
     const iv = typeof ivCandidate === 'string' ? ivCandidate : '';
     const data = typeof dataCandidate === 'string' ? dataCandidate : '';
 
     if (!iv || !data) {
-      throw new Error('Invalid encrypted object payload');
+      throw new SafeError('Invalid encrypted object payload');
     }
 
     return { iv, data };
@@ -237,13 +263,13 @@ function parseRawEncryptedPayload(payload: string): EncryptedPayload {
 
   const separatorIndex = trimmedPayload.indexOf(':');
   if (separatorIndex <= 0) {
-    throw new Error('Encrypted payload must be iv:ciphertext');
+    throw new SafeError('Encrypted payload must be iv:ciphertext');
   }
 
   const iv = trimmedPayload.slice(0, separatorIndex);
   const data = trimmedPayload.slice(separatorIndex + 1);
   if (!iv || !data) {
-    throw new Error('Invalid iv:ciphertext payload');
+    throw new SafeError('Invalid iv:ciphertext payload');
   }
 
   return { iv, data };
@@ -268,7 +294,7 @@ function resolveKey(keySource: string): Buffer {
     return utf8Key;
   }
 
-  throw new Error('JSON_DECRYPT_KEY must decode to 32 bytes.');
+  throw new SafeError('JSON_DECRYPT_KEY must decode to 32 bytes.');
 }
 
 function decodeIv(rawValue: string): { value: Buffer; encoding: PayloadEncoding } {
@@ -293,7 +319,7 @@ function decodeIv(rawValue: string): { value: Buffer; encoding: PayloadEncoding 
     return { value: utf8Buffer, encoding: 'utf8' };
   }
 
-  throw new Error('IV must decode to 16 bytes');
+  throw new SafeError('IV must decode to 16 bytes');
 }
 
 function decodeCipherData(rawValue: string, preferredEncoding: PayloadEncoding): Buffer {
@@ -307,7 +333,7 @@ function decodeCipherData(rawValue: string, preferredEncoding: PayloadEncoding):
     }
   }
 
-  throw new Error('Cipher data could not be decoded');
+  throw new SafeError('Cipher data could not be decoded');
 }
 
 function decodeByEncoding(value: string, encoding: PayloadEncoding): Buffer | null {
