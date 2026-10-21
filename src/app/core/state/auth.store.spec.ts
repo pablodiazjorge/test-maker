@@ -9,7 +9,7 @@ describe('AUTH_STORE', () => {
 
   beforeEach(() => {
     TestBed.resetTestingModule();
-    localStorage.clear();
+    sessionStorage.clear();
   });
 
   afterEach(() => {
@@ -37,7 +37,7 @@ describe('AUTH_STORE', () => {
     expect(store.isAuthenticated()).toBe(true);
     expect(store.userId()).toBe('user-1');
     expect(store.session()).toEqual({ userId: 'user-1', authenticatedAt: 123456 });
-    expect(localStorage.getItem(cacheKey)).toContain('"user-1"');
+    expect(sessionStorage.getItem(cacheKey)).toContain('"user-1"');
   });
 
   it('logs out and clears cache', () => {
@@ -49,7 +49,7 @@ describe('AUTH_STORE', () => {
 
     expect(store.session()).toBeNull();
     expect(store.isAuthenticated()).toBe(false);
-    expect(localStorage.getItem(cacheKey)).toBeNull();
+    expect(sessionStorage.getItem(cacheKey)).toBeNull();
   });
 
   it('restores session from cache when valid', () => {
