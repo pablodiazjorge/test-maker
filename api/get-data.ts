@@ -7,7 +7,20 @@ export const config = {
   runtime: 'nodejs',
 };
 
-interface EncryptedPayload {
+// Question banks come in two formats:
+// - v2, written by scripts/encrypt-master-data.mjs: `{ "v": 2, "iv", "tag", "data" }`, base64
+//   fields, AES-256-GCM with a 12-byte IV and a 16-byte tag. The tag authenticates the IV and the
+//   ciphertext, so a modified bank is rejected. Other fields (`algorithm`, `createdAt`) are ignored.
+// - Legacy (v1), with no `v` field: AES-256-CBC, not authenticated, as `{ "iv", "data" }` or
+//   `iv:ciphertext`. It is still read so this version can be deployed before the banks are re-encrypted.
+const GCM_IV_LENGTH = 12;
+const GCM_TAG_LENGTH = 16;
+
+type ParsedEncryptedPayload =
+  | { version: 1; iv: Buffer; data: Buffer }
+  | { version: 2; iv: Buffer; tag: Buffer; data: Buffer };
+
+interface LegacyEncryptedPayload {
   iv: string;
   data: string;
 }
@@ -213,11 +226,10 @@ async function fetchEncryptedPayload(url: string, token: string): Promise<string
   return payload;
 }
 
-function decryptPayload(payload: string, keySource: string): unknown {
+// Decrypts a question bank (v2 or legacy) with a key in any format resolveKey accepts.
+export function decryptPayload(payload: string, keySource: string): unknown {
   const key = resolveKey(keySource);
-  const { iv, data } = parseEncryptedPayload(payload);
-  const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
-  const decrypted = Buffer.concat([decipher.update(data), decipher.final()]).toString('utf8');
+  const decrypted = decryptBank(parseEncryptedPayload(payload), key);
   try {
     return JSON.parse(decrypted) as unknown;
   } catch {
@@ -225,14 +237,24 @@ function decryptPayload(payload: string, keySource: string): unknown {
   }
 }
 
-function parseEncryptedPayload(payload: string): { iv: Buffer; data: Buffer } {
-  const normalized = parseRawEncryptedPayload(payload);
-  const ivInfo = decodeIv(normalized['iv']);
-  const data = decodeCipherData(normalized['data'], ivInfo.encoding);
-  return { iv: ivInfo.value, data };
+function decryptBank(payload: ParsedEncryptedPayload, key: Buffer): string {
+  if (payload.version === 2) {
+    // authTagLength stops Node from accepting a truncated tag.
+    const decipher = crypto.createDecipheriv('aes-256-gcm', key, payload.iv, { authTagLength: GCM_TAG_LENGTH });
+    decipher.setAuthTag(payload.tag);
+    try {
+      // update() output is only used once final() has checked the tag.
+      return Buffer.concat([decipher.update(payload.data), decipher.final()]).toString('utf8');
+    } catch {
+      throw new SafeError('Encrypted payload failed authentication');
+    }
+  }
+
+  const decipher = crypto.createDecipheriv('aes-256-cbc', key, payload.iv);
+  return Buffer.concat([decipher.update(payload.data), decipher.final()]).toString('utf8');
 }
 
-function parseRawEncryptedPayload(payload: string): EncryptedPayload {
+function parseEncryptedPayload(payload: string): ParsedEncryptedPayload {
   const trimmedPayload = payload.trim();
   if (!trimmedPayload) {
     throw new SafeError('Encrypted payload is empty');
@@ -242,32 +264,70 @@ function parseRawEncryptedPayload(payload: string): EncryptedPayload {
     throw new SafeError('Encrypted payload appears to be HTML. Check GITHUB_ENCRYPTED_JSON_URL.');
   }
 
-  if (trimmedPayload.startsWith('{')) {
-    let parsed: JsonRecord;
-    try {
-      parsed = JSON.parse(trimmedPayload) as JsonRecord;
-    } catch {
-      throw new SafeError('Encrypted payload is not valid JSON');
-    }
-    const ivCandidate = parsed['iv'];
-    const dataCandidate = parsed['data'] ?? parsed['content'] ?? parsed['ciphertext'];
-    const iv = typeof ivCandidate === 'string' ? ivCandidate : '';
-    const data = typeof dataCandidate === 'string' ? dataCandidate : '';
-
-    if (!iv || !data) {
-      throw new SafeError('Invalid encrypted object payload');
-    }
-
-    return { iv, data };
+  if (!trimmedPayload.startsWith('{')) {
+    return parseLegacyPayload(splitLegacyStringPayload(trimmedPayload));
   }
 
-  const separatorIndex = trimmedPayload.indexOf(':');
+  let parsed: JsonRecord;
+  try {
+    parsed = JSON.parse(trimmedPayload) as JsonRecord;
+  } catch {
+    throw new SafeError('Encrypted payload is not valid JSON');
+  }
+
+  if (!('v' in parsed)) {
+    return parseLegacyPayload(readLegacyObjectPayload(parsed));
+  }
+
+  if (parsed['v'] === 2) {
+    return parseGcmPayload(parsed);
+  }
+
+  throw new SafeError('Unsupported encrypted payload version');
+}
+
+function parseGcmPayload(parsed: JsonRecord): ParsedEncryptedPayload {
+  const iv = decodeBase64Field(parsed['iv']);
+  const tag = decodeBase64Field(parsed['tag']);
+  const data = decodeBase64Field(parsed['data']);
+  if (!iv || iv.length !== GCM_IV_LENGTH || !tag || tag.length !== GCM_TAG_LENGTH || !data || data.length === 0) {
+    throw new SafeError('Invalid v2 encrypted payload');
+  }
+
+  return { version: 2, iv, tag, data };
+}
+
+function decodeBase64Field(value: unknown): Buffer | null {
+  return typeof value === 'string' ? decodeBase64(value) : null;
+}
+
+function parseLegacyPayload(payload: LegacyEncryptedPayload): ParsedEncryptedPayload {
+  const ivInfo = decodeIv(payload.iv);
+  const data = decodeCipherData(payload.data, ivInfo.encoding);
+  return { version: 1, iv: ivInfo.value, data };
+}
+
+function readLegacyObjectPayload(parsed: JsonRecord): LegacyEncryptedPayload {
+  const ivCandidate = parsed['iv'];
+  const dataCandidate = parsed['data'] ?? parsed['content'] ?? parsed['ciphertext'];
+  const iv = typeof ivCandidate === 'string' ? ivCandidate : '';
+  const data = typeof dataCandidate === 'string' ? dataCandidate : '';
+
+  if (!iv || !data) {
+    throw new SafeError('Invalid encrypted object payload');
+  }
+
+  return { iv, data };
+}
+
+function splitLegacyStringPayload(payload: string): LegacyEncryptedPayload {
+  const separatorIndex = payload.indexOf(':');
   if (separatorIndex <= 0) {
     throw new SafeError('Encrypted payload must be iv:ciphertext');
   }
 
-  const iv = trimmedPayload.slice(0, separatorIndex);
-  const data = trimmedPayload.slice(separatorIndex + 1);
+  const iv = payload.slice(0, separatorIndex);
+  const data = payload.slice(separatorIndex + 1);
   if (!iv || !data) {
     throw new SafeError('Invalid iv:ciphertext payload');
   }
