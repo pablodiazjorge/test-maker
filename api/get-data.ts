@@ -7,25 +7,18 @@ export const config = {
   runtime: 'nodejs',
 };
 
-// Question banks come in two formats:
-// - v2, written by scripts/encrypt-master-data.mjs: `{ "v": 2, "iv", "tag", "data" }`, base64
-//   fields, AES-256-GCM with a 12-byte IV and a 16-byte tag. The tag authenticates the IV and the
-//   ciphertext, so a modified bank is rejected. Other fields (`algorithm`, `createdAt`) are ignored.
-// - Legacy (v1), with no `v` field: AES-256-CBC, not authenticated, as `{ "iv", "data" }` or
-//   `iv:ciphertext`. It is still read so this version can be deployed before the banks are re-encrypted.
+// Question banks use the v2 format written by scripts/encrypt-master-data.mjs:
+// `{ "v": 2, "iv", "tag", "data" }`, base64 fields, AES-256-GCM with a 12-byte IV and a 16-byte tag.
+// The tag authenticates the IV and the ciphertext, so a modified bank is rejected. Other fields
+// (`algorithm`, `createdAt`) are ignored. The old AES-256-CBC format, with no `v` field, is rejected.
 const GCM_IV_LENGTH = 12;
 const GCM_TAG_LENGTH = 16;
 
-type ParsedEncryptedPayload =
-  | { version: 1; iv: Buffer; data: Buffer }
-  | { version: 2; iv: Buffer; tag: Buffer; data: Buffer };
-
-interface LegacyEncryptedPayload {
-  iv: string;
-  data: string;
+interface ParsedEncryptedPayload {
+  iv: Buffer;
+  tag: Buffer;
+  data: Buffer;
 }
-
-type PayloadEncoding = 'hex' | 'base64' | 'base64url' | 'utf8';
 
 interface VercelRequestLike {
   method?: string;
@@ -226,7 +219,7 @@ async function fetchEncryptedPayload(url: string, token: string): Promise<string
   return payload;
 }
 
-// Decrypts a question bank (v2 or legacy) with a key in any format resolveKey accepts.
+// Decrypts a v2 question bank with a key in any format resolveKey accepts.
 export function decryptPayload(payload: string, keySource: string): unknown {
   const key = resolveKey(keySource);
   const decrypted = decryptBank(parseEncryptedPayload(payload), key);
@@ -238,20 +231,15 @@ export function decryptPayload(payload: string, keySource: string): unknown {
 }
 
 function decryptBank(payload: ParsedEncryptedPayload, key: Buffer): string {
-  if (payload.version === 2) {
-    // authTagLength stops Node from accepting a truncated tag.
-    const decipher = crypto.createDecipheriv('aes-256-gcm', key, payload.iv, { authTagLength: GCM_TAG_LENGTH });
-    decipher.setAuthTag(payload.tag);
-    try {
-      // update() output is only used once final() has checked the tag.
-      return Buffer.concat([decipher.update(payload.data), decipher.final()]).toString('utf8');
-    } catch {
-      throw new SafeError('Encrypted payload failed authentication');
-    }
+  // authTagLength stops Node from accepting a truncated tag.
+  const decipher = crypto.createDecipheriv('aes-256-gcm', key, payload.iv, { authTagLength: GCM_TAG_LENGTH });
+  decipher.setAuthTag(payload.tag);
+  try {
+    // update() output is only used once final() has checked the tag.
+    return Buffer.concat([decipher.update(payload.data), decipher.final()]).toString('utf8');
+  } catch {
+    throw new SafeError('Encrypted payload failed authentication');
   }
-
-  const decipher = crypto.createDecipheriv('aes-256-cbc', key, payload.iv);
-  return Buffer.concat([decipher.update(payload.data), decipher.final()]).toString('utf8');
 }
 
 function parseEncryptedPayload(payload: string): ParsedEncryptedPayload {
@@ -265,7 +253,7 @@ function parseEncryptedPayload(payload: string): ParsedEncryptedPayload {
   }
 
   if (!trimmedPayload.startsWith('{')) {
-    return parseLegacyPayload(splitLegacyStringPayload(trimmedPayload));
+    throw new SafeError('Unsupported encrypted payload format');
   }
 
   let parsed: JsonRecord;
@@ -275,15 +263,11 @@ function parseEncryptedPayload(payload: string): ParsedEncryptedPayload {
     throw new SafeError('Encrypted payload is not valid JSON');
   }
 
-  if (!('v' in parsed)) {
-    return parseLegacyPayload(readLegacyObjectPayload(parsed));
+  if (parsed['v'] !== 2) {
+    throw new SafeError('Unsupported encrypted payload version');
   }
 
-  if (parsed['v'] === 2) {
-    return parseGcmPayload(parsed);
-  }
-
-  throw new SafeError('Unsupported encrypted payload version');
+  return parseGcmPayload(parsed);
 }
 
 function parseGcmPayload(parsed: JsonRecord): ParsedEncryptedPayload {
@@ -294,45 +278,11 @@ function parseGcmPayload(parsed: JsonRecord): ParsedEncryptedPayload {
     throw new SafeError('Invalid v2 encrypted payload');
   }
 
-  return { version: 2, iv, tag, data };
+  return { iv, tag, data };
 }
 
 function decodeBase64Field(value: unknown): Buffer | null {
   return typeof value === 'string' ? decodeBase64(value) : null;
-}
-
-function parseLegacyPayload(payload: LegacyEncryptedPayload): ParsedEncryptedPayload {
-  const ivInfo = decodeIv(payload.iv);
-  const data = decodeCipherData(payload.data, ivInfo.encoding);
-  return { version: 1, iv: ivInfo.value, data };
-}
-
-function readLegacyObjectPayload(parsed: JsonRecord): LegacyEncryptedPayload {
-  const ivCandidate = parsed['iv'];
-  const dataCandidate = parsed['data'] ?? parsed['content'] ?? parsed['ciphertext'];
-  const iv = typeof ivCandidate === 'string' ? ivCandidate : '';
-  const data = typeof dataCandidate === 'string' ? dataCandidate : '';
-
-  if (!iv || !data) {
-    throw new SafeError('Invalid encrypted object payload');
-  }
-
-  return { iv, data };
-}
-
-function splitLegacyStringPayload(payload: string): LegacyEncryptedPayload {
-  const separatorIndex = payload.indexOf(':');
-  if (separatorIndex <= 0) {
-    throw new SafeError('Encrypted payload must be iv:ciphertext');
-  }
-
-  const iv = payload.slice(0, separatorIndex);
-  const data = payload.slice(separatorIndex + 1);
-  if (!iv || !data) {
-    throw new SafeError('Invalid iv:ciphertext payload');
-  }
-
-  return { iv, data };
 }
 
 function resolveKey(keySource: string): Buffer {
@@ -357,64 +307,6 @@ function resolveKey(keySource: string): Buffer {
   throw new SafeError('JSON_DECRYPT_KEY must decode to 32 bytes.');
 }
 
-function decodeIv(rawValue: string): { value: Buffer; encoding: PayloadEncoding } {
-  const value = rawValue.trim();
-
-  if (isHex(value) && value.length === 32) {
-    return { value: Buffer.from(value, 'hex'), encoding: 'hex' };
-  }
-
-  const base64Buffer = decodeBase64(value);
-  if (base64Buffer && base64Buffer.length === 16) {
-    return { value: base64Buffer, encoding: 'base64' };
-  }
-
-  const base64UrlBuffer = decodeBase64Url(value);
-  if (base64UrlBuffer && base64UrlBuffer.length === 16) {
-    return { value: base64UrlBuffer, encoding: 'base64url' };
-  }
-
-  const utf8Buffer = Buffer.from(value, 'utf8');
-  if (utf8Buffer.length === 16) {
-    return { value: utf8Buffer, encoding: 'utf8' };
-  }
-
-  throw new SafeError('IV must decode to 16 bytes');
-}
-
-function decodeCipherData(rawValue: string, preferredEncoding: PayloadEncoding): Buffer {
-  const value = rawValue.trim();
-  const orderedEncodings: PayloadEncoding[] = [preferredEncoding, 'base64', 'base64url', 'hex'];
-
-  for (const encoding of orderedEncodings) {
-    const decoded = decodeByEncoding(value, encoding);
-    if (decoded && decoded.length > 0) {
-      return decoded;
-    }
-  }
-
-  throw new SafeError('Cipher data could not be decoded');
-}
-
-function decodeByEncoding(value: string, encoding: PayloadEncoding): Buffer | null {
-  if (encoding === 'hex') {
-    if (!isHex(value) || value.length % 2 !== 0) {
-      return null;
-    }
-    return Buffer.from(value, 'hex');
-  }
-
-  if (encoding === 'base64') {
-    return decodeBase64(value);
-  }
-
-  if (encoding === 'base64url') {
-    return decodeBase64Url(value);
-  }
-
-  return Buffer.from(value, 'utf8');
-}
-
 function decodeBase64(value: string): Buffer | null {
   const normalized = value.replace(/\s+/g, '');
   if (!/^[A-Za-z0-9+/]*={0,2}$/.test(normalized) || normalized.length % 4 !== 0) {
@@ -426,20 +318,6 @@ function decodeBase64(value: string): Buffer | null {
   } catch {
     return null;
   }
-}
-
-function decodeBase64Url(value: string): Buffer | null {
-  const normalized = value.replace(/\s+/g, '');
-  if (!/^[A-Za-z0-9\-_]+$/.test(normalized)) {
-    return null;
-  }
-
-  const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), '=').replace(/-/g, '+').replace(/_/g, '/');
-  return decodeBase64(padded);
-}
-
-function isHex(value: string): boolean {
-  return /^[a-fA-F0-9]+$/.test(value);
 }
 
 function normalizeGitHubContentUrl(inputUrl: string): string {

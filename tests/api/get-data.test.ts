@@ -23,7 +23,8 @@ function encryptBank(plaintext: string, key: Buffer): string {
   });
 }
 
-// Legacy (v1): AES-256-CBC with no version field, the format of the banks before October 2026.
+// Legacy (v1): AES-256-CBC with no version field, the format of the banks before October 2026,
+// which the API no longer reads.
 function encryptBankV1(plaintext: string, key: Buffer): string {
   const iv = randomBytes(16);
   const cipher = createCipheriv('aes-256-cbc', key, iv);
@@ -64,14 +65,14 @@ describe('decryptPayload', () => {
     expect(decryptPayload(JSON.stringify(payload), keyHex)).toEqual(bank);
   });
 
-  it('still reads a legacy v1 (AES-256-CBC) object payload', () => {
-    expect(decryptPayload(encryptBankV1(plaintext, key), keyHex)).toEqual(bank);
+  it('rejects a legacy v1 (AES-256-CBC) object payload', () => {
+    expect(() => decryptPayload(encryptBankV1(plaintext, key), keyHex)).toThrow('Unsupported encrypted payload version');
   });
 
-  it('still reads a legacy v1 iv:ciphertext payload', () => {
+  it('rejects a legacy v1 iv:ciphertext payload', () => {
     const { iv, data } = JSON.parse(encryptBankV1(plaintext, key)) as { iv: string; data: string };
 
-    expect(decryptPayload(`${iv}:${data}`, keyHex)).toEqual(bank);
+    expect(() => decryptPayload(`${iv}:${data}`, keyHex)).toThrow('Unsupported encrypted payload format');
   });
 
   it.each(['tag', 'iv', 'data'] as const)('rejects a v2 payload whose %s was altered', (field) => {
@@ -259,14 +260,14 @@ describe('POST /api/get-data', () => {
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('APP_USER_1_PASSWORD_HASH'));
   });
 
-  it('still serves a legacy v1 (AES-256-CBC) bank', async () => {
+  it('answers a bare 500 to a legacy v1 (AES-256-CBC) bank', async () => {
     configureUser('1', 'alice', scryptHash(PASSWORD));
     fetchMock.mockResolvedValue(new Response(encryptBankV1(JSON.stringify(bank), decryptKey)));
 
     const response = await login('alice', PASSWORD);
 
-    expect(response.statusCode).toBe(200);
-    expect(response.body).toEqual({ userId: 'alice', data: bank });
+    expect(response.statusCode).toBe(500);
+    expect(response.body).toStrictEqual({ error: 'Internal server error' });
   });
 
   it('answers 405 to methods other than POST', async () => {
