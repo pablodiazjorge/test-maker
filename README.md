@@ -1,8 +1,10 @@
 # TestMaker
 
-TestMaker is a personal exam platform with encrypted question banks (AES-256) and credential access; see [Limitations](#limitations). It is built with Angular 21 (standalone + Signals) for question-bank workflows, not just basic quiz demos.
+> **Status:** finished in October 2026. Not maintained; the deployed app stays online for its users.
 
-Current framework baseline: Angular `21.1.x` (core `21.1.5`, CLI `21.1.4`).
+TestMaker is a personal exam platform with encrypted and authenticated question banks (AES-256-GCM) and credential access; see [Limitations](#limitations). It is built with Angular 21 (standalone + Signals) for question-bank workflows, not just basic quiz demos.
+
+Final framework baseline: Angular `21.2.x` (core `21.2.25`, CLI and build tooling `21.2.28`).
 
 ## Why I Built This
 
@@ -10,8 +12,8 @@ I needed a study tool where I could keep exam questions encrypted so they are no
 trivially shared. Existing quiz apps either required accounts, stored data on
 external servers, or offered no encryption at all.
 
-In TestMaker, question banks are encrypted with AES-256-CBC before they are
-committed, and a serverless API decrypts them on demand after checking the
+In TestMaker, question banks are encrypted with AES-256-GCM before they are
+committed, and a serverless API verifies and decrypts them on demand after checking the
 credentials. The app itself is a static Angular SPA, with no backend database and
 no user accounts beyond the configured credentials. One early version of a bank
 was committed unencrypted; see [Limitations](#limitations).
@@ -39,7 +41,7 @@ but every design decision was intentional and human-reviewed.
 1. Login and Data Provisioning
 - Users authenticate via `POST /api/get-data`.
 - The API checks the password against the user's scrypt hash from the environment (constant-time compare; unknown users are checked against a dummy hash and get the same 401) and resolves a user-specific encrypted dataset URL.
-- Payload is decrypted server-side (AES-256-CBC) and returned as normalized quiz master data.
+- Payload is decrypted server-side (AES-256-GCM) and returned as normalized quiz master data; a bank whose authentication tag does not match is rejected.
 - Failures answer a generic `500 { "error": "Internal server error" }`; the cause goes to the server log only.
 
 2. Session Configuration
@@ -65,8 +67,9 @@ but every design decision was intentional and human-reviewed.
 
 ## Security and Data Handling Model
 - Encrypted content workflow:
-  - `scripts/encrypt-master-data.mjs` encrypts JSON payloads with AES-256-CBC.
-  - `/api/get-data.ts` fetches encrypted payloads (supports GitHub URL normalization), decodes IV/ciphertext, decrypts, and returns structured data.
+  - `scripts/encrypt-master-data.mjs` encrypts JSON payloads with AES-256-GCM into a versioned payload, `{ "v": 2, "iv", "tag", "data" }` (base64; random 12-byte IV, 16-byte authentication tag).
+  - `/api/get-data.ts` fetches encrypted payloads (supports GitHub URL normalization), accepts only version 2, verifies the tag, decrypts, and returns structured data. A modified bank, IV or tag fails authentication and gets the generic 500.
+  - The banks were encrypted with AES-256-CBC, without authentication, until October 2026, when they were re-encrypted with AES-256-GCM under the same keys. The API no longer reads the old format.
 - Password check:
   - `/api/get-data.ts` compares the password with `APP_USER_<n>_PASSWORD_HASH` using scrypt and `timingSafeEqual`. No password is stored in plaintext; the old `APP_USER_<n>_PASSWORD` variables are ignored.
 - Local browser cache strategy:
@@ -130,6 +133,19 @@ other `APP_USER_<n>_*` variables. In a local `.env` file, quote it: some loaders
 - The old `APP_USER_<n>_PASSWORD` variables are ignored (the log warns while they exist); remove them.
 - Set the hashes in Vercel before deploying a version that reads them, or nobody can log in.
 
+### Question banks
+Each bank is encrypted with its user's `APP_USER_<n>_DECRYPT_KEY` (64 hex characters, base64 of
+32 bytes, or 32 UTF-8 bytes), and `APP_USER_<n>_JSON_URL` points to the raw URL of the encrypted file:
+
+```
+node scripts/encrypt-master-data.mjs <bank.json> <bank.encrypted.json> <key file>
+```
+
+The defaults are `public/assets/master-data.json`, `public/assets/master-data.encrypted.json` and
+`.secrets/json-decrypt-key.txt`, relative to the current directory; when `JSON_DECRYPT_KEY` is set,
+the script uses it instead of the key file. The plaintext banks and the key files are ignored by git.
+Every run uses a new random IV, so re-encrypting the same bank gives a different file.
+
 ### Rate limit
 Login attempts are rate limited per IP by a Vercel Firewall rule on `/api/get-data`, configured in
 the Vercel dashboard, not in this repository (at the time of writing: fixed window of 60 seconds,
@@ -142,12 +158,12 @@ the Vercel dashboard, not in this repository (at the time of writing: fixed wind
 - `npm run test:api` - Run only the Node-side tests in `tests/` (API function and scripts) with plain Vitest.
 - `npm run test:watch` - Run unit tests in watch mode.
 - `npm run test:coverage` - Run tests with coverage report and enforced thresholds.
-- `npm run encrypt:data` - Encrypt a master question bank for protected delivery.
+- `npm run encrypt:data` - Encrypt a master question bank with AES-256-GCM for protected delivery (see [Question banks](#question-banks)).
 - `npm run --silent hash:password` - Print the value for `APP_USER_<n>_PASSWORD_HASH`.
 
 ## Testing and Coverage
 - Unit testing stack: Angular `@angular/build:unit-test` with Vitest for `src/`; plain Vitest (`vitest.config.ts`, Node environment) for `tests/`, which lives outside `api/` because Vercel deploys every `api/**/*.ts` file as a function.
-- Current suite: 94 Angular unit tests in 18 files (`ng test`) and 28 Node-side tests in 2 files (`npx vitest run`).
+- Current suite: 94 Angular unit tests in 18 files (`ng test`) and 58 Node-side tests in 3 files (`npx vitest run`).
 - Coverage scope: application TypeScript files under `src/app/**/*.ts` (excluding specs and non-runtime type-only files).
 - Enforced quality gate:
   - Statements: `>= 80%`
@@ -159,12 +175,12 @@ the Vercel dashboard, not in this repository (at the time of writing: fixed wind
   - UX state services (theme and runtime i18n)
   - Feature behavior (login, setup, runner keyboard shortcuts, results/export)
   - Shared reusable UI controls
-  - API password check, error responses and the hash script (`tests/`)
+  - API password check, error responses, bank decryption (tampered tag, IV or data; unknown versions) and the hash and encryption scripts (`tests/`)
 
 ## Project Layout
 - `api/get-data.ts` - Password check (scrypt) and encrypted dataset delivery.
 - `scripts/hash-password.mjs` - Generates the `APP_USER_<n>_PASSWORD_HASH` values.
-- `scripts/encrypt-master-data.mjs` - Encrypts a question bank with AES-256-CBC.
+- `scripts/encrypt-master-data.mjs` - Encrypts a question bank with AES-256-GCM.
 - `tests/` - Node-side tests for the API function and the scripts.
 - `src/app/core/services/quiz.service.ts` - Question-bank normalization, quiz lifecycle, scoring, topic analytics.
 - `src/app/core/services/i18n.service.ts` - Application language initialization, persistence, and translation helpers.
@@ -185,10 +201,8 @@ the Vercel dashboard, not in this repository (at the time of writing: fixed wind
   every bank since then has been committed encrypted only.
 - **The encrypted banks are public files.** `public/assets/*.encrypted.json` is served as static
   assets and kept in the git history, so its confidentiality rests on the keys
-  (`APP_USER_<n>_DECRYPT_KEY`), which are never committed.
-- **AES-256-CBC without authentication.** The banks are encrypted but not authenticated, so a
-  modified file is not detected as tampered. Moving to AES-256-GCM with a versioned payload is
-  planned.
+  (`APP_USER_<n>_DECRYPT_KEY`), which are never committed. The history also keeps the AES-256-CBC
+  versions from before the October 2026 re-encryption, protected by the same keys.
 - **The route guards are UX, not security.** `authGuard` and `activeQuizGuard` decide which screen
   to show from state kept in the browser, which the user controls. The security boundary is the
   API: without valid credentials it returns no data.
